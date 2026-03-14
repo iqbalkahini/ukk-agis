@@ -203,17 +203,6 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
               ?></p>
                         <p class="text-blue-100 text-sm mt-2 flex items-center"><i class="fas fa-clock mr-2 spin-slow"></i><span id="liveClock"><?php echo date('H:i:s'); ?> WIB</span></p>
                     </div>
-                    <div class="mt-4 md:mt-0 flex gap-4">
-                        <div class="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 border border-white/20 hover:bg-white/20 transition-all hover:scale-105 text-center">
-                            <p class="text-sm text-blue-100">Lelang Aktif</p>
-                            <p class="text-3xl font-bold counter" data-target="<?php echo $lelang_aktif; ?>">0</p>
-                            <p class="text-xs text-blue-100 mt-1 flex items-center justify-center"><i class="fas fa-arrow-up mr-1 animate-bounce"></i>Berlangsung</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 border border-white/20 hover:bg-white/20 transition-all hover:scale-105 text-center">
-                            <p class="text-sm text-blue-100">Lelang Selesai</p>
-                            <p class="text-3xl font-bold counter" data-target="<?php echo $lelang_tutup; ?>">0</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
