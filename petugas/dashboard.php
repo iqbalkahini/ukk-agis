@@ -185,10 +185,6 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                         <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
                     </a>
-                    <a href="data_user.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-users w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Data User</span>
-                    </a>
                     <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
                         <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>

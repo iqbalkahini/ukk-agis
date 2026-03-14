@@ -132,54 +132,35 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
                     <div>
                         <p class="text-white/80 text-sm font-light">Selamat datang,</p>
                         <p class="text-xl font-bold group-hover:translate-x-1 transition-transform"><?php echo $_SESSION['nama_lengkap']; ?></p>
-                        <p class="text-white/80 text-xs mt-1 flex items-center"><i class="fas fa-circle text-green-300 text-[6px] mr-2 animate-pulse"></i>Aktif</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/20">
-                    <div class="text-center group-hover:scale-110 transition-transform">
-                        <p class="text-2xl font-bold counter" data-target="<?php echo $total_lelang; ?>">0</p>
-                        <p class="text-xs text-white/80">Total Lelang</p>
-                    </div>
-                    <div class="text-center group-hover:scale-110 transition-transform">
-                        <p class="text-2xl font-bold counter" data-target="<?php echo $lelang_aktif; ?>">0</p>
-                        <p class="text-xs text-white/80">Aktif</p>
+                        <p class="text-white/80 text-xs mt-1 flex items-center"><i class="fas fa-circle text-green-300 text-[6px] mr-2 animate-pulse"></i>Sedang Aktif</p>
                     </div>
                 </div>
             </div>
             <!-- Nav -->
-            <nav class="space-y-2">
-                <p class="text-xs uppercase tracking-wider mb-4 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
-                <a href="dashboard.php" class="flex items-center px-4 py-3.5 rounded-xl transition-all hover:bg-blue-50 group" style="color:var(--primary-700)">
+            <nav class="space-y-1">
+                <p class="text-xs uppercase tracking-wider mb-3 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
+                <a href="dashboard.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
                     <i class="fas fa-home w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
                     <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
-                    <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all" style="color:var(--primary-400)"></i>
                 </a>
-                <div class="pt-4">
-                    <p class="text-xs uppercase tracking-wider mb-2 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Manajemen Barang</p>
-                    <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all hover:bg-blue-50 group" style="color:var(--primary-700)">
-                        <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
-                        <span class="ml-auto text-xs px-2 py-1 rounded-lg font-bold" style="background:var(--primary-100);color:var(--primary-600)"><?php echo $total_barang; ?></span>
-                    </a>
-                </div>
-                <div class="pt-4">
-                    <p class="text-xs uppercase tracking-wider mb-2 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Manajemen Lelang</p>
-                    <a href="kelola_lelang.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg group relative overflow-hidden">
-                        <i class="fas fa-gavel w-6 text-white group-hover:rotate-12 transition-transform"></i>
-                        <span class="ml-3 font-medium">Kelola Lelang</span>
-                        <span class="ml-auto text-xs bg-white/20 px-2 py-1 rounded-lg font-bold"><?php echo $lelang_aktif; ?></span>
-                        <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
-                    </a>
-                    <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all hover:bg-blue-50 group mt-1" style="color:var(--primary-700)">
-                        <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
-                        <span class="ml-auto text-xs px-2 py-1 rounded-lg font-bold animate-pulse-soft" style="background:#dcfce7;color:#15803d">Baru</span>
-                    </a>
-                    <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all hover:bg-blue-50 group mt-1" style="color:var(--primary-700)">
-                        <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
-                    </a>
-                </div>
+                <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                    <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
+                </a>
+                <a href="kelola_lelang.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all duration-200 group relative overflow-hidden">
+                    <i class="fas fa-gavel w-6 text-white"></i>
+                    <span class="ml-3 font-medium">Kelola Lelang</span>
+                    <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all"></i>
+                    <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
+                </a>
+                <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                    <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
+                </a>
+                <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                    <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
+                </a>
             </nav>
         </div>
         <!-- Sidebar Footer -->

@@ -581,68 +581,30 @@ if(!function_exists('formatTanggal')) {
                 </div>
                 
                 <!-- Navigation -->
-                <nav class="space-y-2">
-                    <p class="text-xs uppercase tracking-wider text-primary-300 mb-4 px-4 font-semibold slide-in-left">Menu Utama</p>
-                    
-                    <a href="dashboard.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                        <i class="fas fa-home w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                        <span class="ml-3">Beranda</span>
-                        <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
+                <nav class="space-y-1">
+                    <p class="text-xs uppercase tracking-wider mb-3 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
+                    <a href="dashboard.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-home w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
                     </a>
-                    
-                    <div class="pt-4">
-                        <p class="text-xs uppercase tracking-wider text-primary-300 mb-2 px-4 font-semibold slide-in-left">Manajemen Barang</p>
-                        <?php if($is_admin): ?>
-                        <a href="total_barang.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-box w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Total Barang</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                        <?php endif; ?>
-                        <a href="data_barang.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-database w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Data Barang</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="text-xs uppercase tracking-wider text-primary-300 mb-2 px-4 font-semibold slide-in-left">Manajemen Lelang</p>
-                        <?php if($is_admin): ?>
-                        <a href="total_lelang.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-gavel w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Total Lelang</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                        <?php else: ?>
-                        <a href="kelola_lelang.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-gavel w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Kelola Lelang</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                        <?php endif; ?>
-                        <a href="pembayaran.php" class="flex items-center px-4 py-3 gradient-bg text-white rounded-xl shadow-md transition-all duration-200 group">
-                            <i class="fas fa-credit-card w-6 text-white"></i>
-                            <span class="ml-3 font-semibold">Pembayaran</span>
-                            <span class="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">Aktif</span>
-                        </a>
-                        <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Laporan</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                    </div>
-                    
-                    <?php if($is_admin): ?>
-                    <div class="pt-4">
-                        <p class="text-xs uppercase tracking-wider text-primary-300 mb-2 px-4 font-semibold slide-in-left">Pengaturan</p>
-                        <a href="data_user.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-users-cog w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Data User</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-                    </div>
-                    <?php endif; ?>
+                    <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
+                    </a>
+                    <a href="kelola_lelang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-gavel w-6 group-hover:rotate-12 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Kelola Lelang</span>
+                    </a>
+                    <a href="pembayaran.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-credit-card w-6 text-white"></i>
+                        <span class="ml-3 font-medium">Pembayaran</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all"></i>
+                        <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
+                    </a>
+                    <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
+                    </a>
                 </nav>
             </div>
             
