@@ -162,16 +162,6 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                             </p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/20">
-                        <div class="text-center transform group-hover:scale-110 transition-transform">
-                            <p class="text-2xl font-bold counter" data-target="<?php echo $total_lelang; ?>">0</p>
-                            <p class="text-xs text-white/80">Total Lelang</p>
-                        </div>
-                        <div class="text-center transform group-hover:scale-110 transition-transform">
-                            <p class="text-2xl font-bold counter" data-target="<?php echo $lelang_aktif; ?>">0</p>
-                            <p class="text-xs text-white/80">Aktif</p>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Navigation -->
@@ -248,15 +238,6 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                                 <i class="fas fa-clock mr-2 animate-spin-slow"></i>
                                 <span id="liveClock"><?php echo date('H:i:s'); ?> WIB</span>
                             </p>
-                        </div>
-                        <div class="mt-4 md:mt-0 slide-in-right">
-                            <div class="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
-                                <p class="text-sm text-blue-100">Total Nilai Transaksi</p>
-                                <p class="text-3xl font-bold">Rp <?php echo number_format($total_nilai ?? 0, 0, ',', '.'); ?></p>
-                                <p class="text-xs text-blue-100 mt-1 flex items-center">
-                                    <i class="fas fa-check-circle mr-1 animate-bounce"></i>Pembayaran selesai
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
