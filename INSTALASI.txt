@@ -1,0 +1,204 @@
+====================================================================
+         PETUNJUK INSTALASI SISTEM LELANG ONLINE
+         UKK RPL 2025/2026 - PAKET 4
+====================================================================
+
+REQUIREMENTS:
+=============
+1. XAMPP (Apache + MySQL + PHP 7.4+)
+   Download: https://www.apachefriends.org/
+
+2. Web Browser (Chrome, Firefox, Edge, dll)
+
+3. Text Editor (opsional untuk edit kode):
+   - VS Code
+   - Sublime Text
+   - Notepad++
+
+
+LANGKAH INSTALASI:
+==================
+
+1. INSTALL XAMPP
+   - Download dan install XAMPP
+   - Pastikan Apache dan MySQL terinstall
+
+2. EXTRACT PROJECT
+   - Extract file sistem-lelang-online.zip
+   - Copy folder "sistem-lelang-online" ke dalam folder:
+     C:\xampp\htdocs\
+   
+   Struktur folder menjadi:
+   C:\xampp\htdocs\sistem-lelang-online\
+
+3. START XAMPP
+   - Buka XAMPP Control Panel
+   - Start Apache
+   - Start MySQL
+
+4. BUAT DATABASE
+   Opsi A (Menggunakan phpMyAdmin):
+   - Buka browser, akses: http://localhost/phpmyadmin
+   - Klik "New" untuk membuat database baru
+   - Nama database: sistem_lelang_online
+   - Collation: utf8mb4_general_ci
+   - Klik "Create"
+   
+   - Pilih database "sistem_lelang_online" yang baru dibuat
+   - Klik tab "Import"
+   - Click "Choose File"
+   - Pilih file: sistem-lelang-online/database.sql
+   - Scroll ke bawah, klik "Go"
+   - Tunggu sampai selesai (muncul pesan sukses)
+
+   Opsi B (Menggunakan SQL Query):
+   - Buka phpMyAdmin
+   - Klik tab "SQL"
+   - Copy paste seluruh isi file database.sql
+   - Klik "Go"
+
+5. KONFIGURASI (Opsional)
+   Jika perlu mengubah konfigurasi database:
+   - Buka file: sistem-lelang-online/config/config.php
+   - Edit bagian:
+     define('DB_HOST', 'localhost');      // Host database
+     define('DB_USER', 'root');           // Username MySQL
+     define('DB_PASS', '');               // Password MySQL (kosong)
+     define('DB_NAME', 'sistem_lelang_online'); // Nama database
+
+6. JALANKAN APLIKASI
+   - Buka browser
+   - Akses: http://localhost/sistem-lelang-online/
+   - Anda akan melihat halaman landing page
+
+7. LOGIN
+   Gunakan salah satu akun berikut:
+
+   ADMINISTRATOR:
+   - Username: admin
+   - Password: admin123
+
+   PETUGAS:
+   - Username: petugas
+   - Password: petugas123
+
+   MASYARAKAT:
+   - Username: budi
+   - Password: budi123
+
+
+FITUR YANG TERSEDIA:
+====================
+
+ADMINISTRATOR:
+- Dashboard dengan statistik
+- Manajemen Data Barang
+- Manajemen Total Lelang
+- Manajemen Pembayaran
+- Generate Laporan
+- Manajemen User
+
+PETUGAS:
+- Dashboard
+- Pendataan Barang
+- Kelola Lelang (Buka/Tutup)
+- Manajemen Pembayaran
+- Generate Laporan
+
+MASYARAKAT:
+- Registrasi Akun Baru
+- Browse Barang Lelang
+- Detail Barang & Penawaran
+- Riwayat Penawaran
+- Pembayaran
+
+
+TROUBLESHOOTING:
+================
+
+1. Error "Connection failed":
+   - Pastikan MySQL di XAMPP sudah running
+   - Check konfigurasi di config/config.php
+   - Pastikan database sudah dibuat
+
+2. Halaman blank/error:
+   - Pastikan Apache sudah running
+   - Check folder ada di htdocs
+   - Pastikan semua file ter-extract dengan benar
+
+3. Login tidak berhasil:
+   - Pastikan database sudah di-import
+   - Check tabel tb_user ada datanya
+   - Gunakan username dan password yang benar
+
+4. CSS tidak muncul:
+   - Clear cache browser (Ctrl + F5)
+   - Pastikan koneksi internet aktif (untuk Tailwind CDN)
+
+5. Error 404 Not Found:
+   - Pastikan URL benar: http://localhost/sistem-lelang-online/
+   - Check folder name di htdocs
+
+
+CARA TESTING:
+=============
+
+1. TEST LOGIN
+   - Akses halaman login
+   - Coba login dengan akun admin, petugas, dan masyarakat
+   - Pastikan redirect ke dashboard yang sesuai
+
+2. TEST FITUR ADMIN
+   - Login sebagai admin
+   - Tambah barang baru
+   - Edit barang
+   - Hapus barang
+   - Generate laporan
+
+3. TEST FITUR PETUGAS
+   - Login sebagai petugas
+   - Buka lelang baru
+   - Tutup lelang
+   - Lihat laporan
+
+4. TEST FITUR MASYARAKAT
+   - Daftar akun baru
+   - Login dengan akun baru
+   - Lihat barang lelang
+   - Buat penawaran
+   - Lihat riwayat penawaran
+
+
+CATATAN PENTING:
+================
+
+1. Untuk keamanan produksi:
+   - Ganti semua password default
+   - Gunakan password_hash() bukan MD5
+   - Tambahkan validasi input yang lebih ketat
+
+2. Untuk development:
+   - Error reporting sudah aktif
+   - Session timeout default
+
+3. Database:
+   - Backup database secara berkala
+   - Gunakan prepared statement untuk keamanan
+
+4. Customisasi:
+   - Semua file bisa dikustomisasi
+   - Design menggunakan Tailwind CSS
+   - Mudah untuk ditambahkan fitur baru
+
+
+KONTAK SUPPORT:
+===============
+Jika ada pertanyaan atau masalah:
+- Email: info@lelangonline.com
+- Phone: +62 812-3456-7890
+
+
+====================================================================
+                    SELAMAT MENGGUNAKAN!
+           Sistem Lelang Online - UKK RPL 2025/2026
+====================================================================
