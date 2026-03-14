@@ -4,8 +4,12 @@ require_once('../config/config.php');
 checkLevel([1, 2]);
 
 $is_admin = $_SESSION['id_level'] == 1;
-$tanggal_dari = $_GET['dari'] ?? date('Y-m-01');
-$tanggal_sampai = $_GET['sampai'] ?? date('Y-m-d');
+$tanggal_dari = isset($_GET['dari']) ? mysqli_real_escape_string($conn, $_GET['dari']) : date('Y-m-01');
+$tanggal_sampai = isset($_GET['sampai']) ? mysqli_real_escape_string($conn, $_GET['sampai']) : date('Y-m-d');
+$export_type = isset($_GET['export']) ? mysqli_real_escape_string($conn, $_GET['export']) : '';
+
+if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal_dari)) $tanggal_dari = date('Y-m-01');
+if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal_sampai)) $tanggal_sampai = date('Y-m-d');
 
 $laporan = mysqli_query($conn, "SELECT l.*, b.nama_barang, b.harga_awal, u.nama_lengkap as pemenang
                                 FROM tb_lelang l JOIN tb_barang b ON l.id_barang = b.id_barang
@@ -17,6 +21,161 @@ $total_lelang = $total_nilai = $lelang_selesai = 0;
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_barang"))['t'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
 $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang"))['t'];
+
+if(!function_exists('formatRupiah')) {
+    function formatRupiah($angka) {
+        if($angka === null || $angka === '') return 'Rp 0';
+        return 'Rp ' . number_format(floatval($angka), 0, ',', '.');
+    }
+}
+if(!function_exists('formatTanggal')) {
+    function formatTanggal($tanggal) {
+        if($tanggal === null || $tanggal === '' || $tanggal == '0000-00-00') return '-';
+        return date('d/m/Y', strtotime($tanggal));
+    }
+}
+if(!function_exists('formatTanggalWaktu')) {
+    function formatTanggalWaktu($tanggal) {
+        if($tanggal === null || $tanggal === '' || $tanggal == '0000-00-00 00:00:00') return '-';
+        return date('d/m/Y H:i', strtotime($tanggal));
+    }
+}
+if(!function_exists('escapeExcel')) {
+    function escapeExcel($value) {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+$rows_data = [];
+$total_lelang_periode = 0;
+while($row_tmp = mysqli_fetch_assoc($laporan)) {
+    $rows_data[] = $row_tmp;
+    $total_lelang_periode++;
+    if($row_tmp['status']=='ditutup'){
+        $lelang_selesai++;
+        $total_nilai += floatval($row_tmp['harga_akhir'] ?? 0);
+    }
+}
+
+$pembayaran_result = mysqli_query($conn, "SELECT p.*, l.id_lelang, l.tgl_lelang, l.harga_akhir, b.nama_barang, u.nama_lengkap,
+                                                 COALESCE(p.created_at, CONCAT(l.tgl_lelang, ' 00:00:00')) as tanggal_pembayaran
+                                          FROM tb_pembayaran p
+                                          JOIN tb_lelang l ON p.id_lelang = l.id_lelang
+                                          JOIN tb_barang b ON l.id_barang = b.id_barang
+                                          JOIN tb_user u ON p.id_user = u.id_user
+                                          WHERE DATE(COALESCE(p.created_at, CONCAT(l.tgl_lelang, ' 00:00:00'))) BETWEEN '$tanggal_dari' AND '$tanggal_sampai'
+                                          ORDER BY tanggal_pembayaran DESC");
+
+$payment_rows = [];
+$total_pembayaran = 0;
+$total_pembayaran_selesai = 0;
+$total_nilai_pembayaran = 0;
+if($pembayaran_result) {
+    while($payment = mysqli_fetch_assoc($pembayaran_result)) {
+        $payment_rows[] = $payment;
+        $total_pembayaran++;
+        if(($payment['status_pembayaran'] ?? '') === 'selesai') {
+            $total_pembayaran_selesai++;
+            $total_nilai_pembayaran += floatval($payment['jumlah'] ?? 0);
+        }
+    }
+}
+
+if($export_type === 'excel') {
+    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+    header('Content-Disposition: attachment; filename=laporan-lelang-pembayaran-' . $tanggal_dari . '-sd-' . $tanggal_sampai . '.xls');
+    echo "<table border='1'>";
+    echo "<tr><th colspan='7'>Laporan Lelang</th></tr>";
+    echo "<tr><th>No</th><th>Tanggal</th><th>Nama Barang</th><th>Harga Awal</th><th>Harga Akhir</th><th>Pemenang</th><th>Status</th></tr>";
+    foreach($rows_data as $i => $row) {
+        echo '<tr>';
+        echo '<td>' . ($i + 1) . '</td>';
+        echo '<td>' . escapeExcel(formatTanggal($row['tgl_lelang'])) . '</td>';
+        echo '<td>' . escapeExcel($row['nama_barang']) . '</td>';
+        echo '<td>' . escapeExcel(formatRupiah($row['harga_awal'])) . '</td>';
+        echo '<td>' . escapeExcel(formatRupiah($row['harga_akhir'])) . '</td>';
+        echo '<td>' . escapeExcel($row['pemenang'] ?: '-') . '</td>';
+        echo '<td>' . escapeExcel($row['status']) . '</td>';
+        echo '</tr>';
+    }
+    echo "</table><br><table border='1'>";
+    echo "<tr><th colspan='8'>Laporan Pembayaran</th></tr>";
+    echo "<tr><th>No</th><th>Tanggal Bayar</th><th>Nama User</th><th>Nama Barang</th><th>Metode</th><th>Jumlah</th><th>Status</th><th>Bukti</th></tr>";
+    foreach($payment_rows as $i => $row) {
+        echo '<tr>';
+        echo '<td>' . ($i + 1) . '</td>';
+        echo '<td>' . escapeExcel(formatTanggalWaktu($row['tanggal_pembayaran'])) . '</td>';
+        echo '<td>' . escapeExcel($row['nama_lengkap']) . '</td>';
+        echo '<td>' . escapeExcel($row['nama_barang']) . '</td>';
+        echo '<td>' . escapeExcel($row['metode_pembayaran'] ?: '-') . '</td>';
+        echo '<td>' . escapeExcel(formatRupiah($row['jumlah'])) . '</td>';
+        echo '<td>' . escapeExcel($row['status_pembayaran']) . '</td>';
+        echo '<td>' . escapeExcel($row['bukti_pembayaran'] ?: '-') . '</td>';
+        echo '</tr>';
+    }
+    echo "</table>";
+    exit;
+}
+
+if($export_type === 'pdf') {
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <title>Export PDF Laporan</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+            h1, h2 { margin: 0 0 12px; }
+            p { margin: 0 0 16px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px; font-size: 12px; text-align: left; }
+            th { background: #e2e8f0; }
+        </style>
+    </head>
+    <body onload="window.print()">
+        <h1>Laporan Lelang dan Pembayaran</h1>
+        <p>Periode <?php echo formatTanggal($tanggal_dari); ?> s/d <?php echo formatTanggal($tanggal_sampai); ?></p>
+        <h2>Data Lelang</h2>
+        <table>
+            <thead><tr><th>No</th><th>Tanggal</th><th>Nama Barang</th><th>Harga Awal</th><th>Harga Akhir</th><th>Pemenang</th><th>Status</th></tr></thead>
+            <tbody>
+                <?php foreach($rows_data as $i => $row): ?>
+                <tr>
+                    <td><?php echo $i + 1; ?></td>
+                    <td><?php echo formatTanggal($row['tgl_lelang']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                    <td><?php echo formatRupiah($row['harga_awal']); ?></td>
+                    <td><?php echo formatRupiah($row['harga_akhir']); ?></td>
+                    <td><?php echo htmlspecialchars($row['pemenang'] ?: '-'); ?></td>
+                    <td><?php echo htmlspecialchars($row['status']); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <h2>Data Pembayaran</h2>
+        <table>
+            <thead><tr><th>No</th><th>Tanggal Bayar</th><th>Nama User</th><th>Nama Barang</th><th>Metode</th><th>Jumlah</th><th>Status</th><th>Bukti</th></tr></thead>
+            <tbody>
+                <?php foreach($payment_rows as $i => $row): ?>
+                <tr>
+                    <td><?php echo $i + 1; ?></td>
+                    <td><?php echo formatTanggalWaktu($row['tanggal_pembayaran']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_lengkap']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                    <td><?php echo htmlspecialchars($row['metode_pembayaran'] ?: '-'); ?></td>
+                    <td><?php echo formatRupiah($row['jumlah']); ?></td>
+                    <td><?php echo htmlspecialchars($row['status_pembayaran']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bukti_pembayaran'] ?: '-'); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    <?php
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -58,6 +217,7 @@ $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t 
         .badge{padding:6px 14px;border-radius:100px;font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;transition:all 0.3s ease;}
         .badge-success{background:#e6f7e6;color:#0a5e0a;border:1px solid #a3e0a3;}
         .badge-info{background:var(--primary-50);color:var(--primary-700);border:1px solid var(--primary-200);}
+        .badge-warning{background:#fff3e0;color:#b45b0a;border:1px solid #ffd7a3;}
         .modern-table{border-collapse:separate;border-spacing:0 10px;}
         .modern-table tbody tr{background:white;border-radius:18px;transition:all 0.3s ease;box-shadow:0 4px 12px -2px rgba(30,58,102,0.06);animation:slideInRow 0.5s ease-out;animation-fill-mode:both;}
         @keyframes slideInRow{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
@@ -86,10 +246,10 @@ $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t 
                 </div>
             </div>
             <div class="flex items-center space-x-4 pr-6">
-                <button onclick="window.print()" class="relative p-2 hover:bg-blue-50 rounded-xl transition-all hover:scale-110 group" style="color:var(--primary-600)" title="Cetak Laporan">
-                    <i class="fas fa-print text-xl"></i>
-                    <span class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Cetak</span>
-                </button>
+                <a href="?dari=<?php echo urlencode($tanggal_dari); ?>&sampai=<?php echo urlencode($tanggal_sampai); ?>&export=pdf" class="relative p-2 hover:bg-blue-50 rounded-xl transition-all hover:scale-110 group" style="color:var(--primary-600)" title="Export PDF">
+                    <i class="fas fa-file-pdf text-xl"></i>
+                    <span class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Export PDF</span>
+                </a>
                 <div class="flex items-center space-x-3 ml-2 pl-2 border-l-2" style="border-color:var(--primary-100)">
                     <div class="text-right hidden sm:block">
                         <p class="text-sm font-semibold" style="color:var(--primary-800)"><?php echo $_SESSION['nama_lengkap']; ?></p>
@@ -228,9 +388,14 @@ $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t 
                         <p class="text-blue-100 text-sm mt-2 flex items-center"><i class="fas fa-clock mr-2 spin-slow"></i><span id="liveClock"><?php echo date('H:i:s'); ?> WIB</span></p>
                     </div>
                     <div class="mt-4 md:mt-0">
-                        <button onclick="window.print()" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 border border-white/20 flex items-center hover:shadow-lg">
-                            <i class="fas fa-print mr-2"></i>Cetak Laporan
-                        </button>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="?dari=<?php echo urlencode($tanggal_dari); ?>&sampai=<?php echo urlencode($tanggal_sampai); ?>&export=pdf" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 border border-white/20 flex items-center hover:shadow-lg">
+                                <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                            </a>
+                            <a href="?dari=<?php echo urlencode($tanggal_dari); ?>&sampai=<?php echo urlencode($tanggal_sampai); ?>&export=excel" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 border border-white/20 flex items-center hover:shadow-lg">
+                                <i class="fas fa-file-excel mr-2"></i>Export Excel
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -253,50 +418,7 @@ $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t 
                         <i class="fas fa-search mr-2"></i>Filter
                     </button>
                 </div>
-                <div class="flex items-end">
-                    <button type="button" onclick="window.print()" class="w-full px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 flex items-center justify-center" style="background:#f1f5f9;color:#475569">
-                        <i class="fas fa-print mr-2"></i>Cetak
-                    </button>
-                </div>
             </form>
-        </div>
-
-        <!-- Stats Summary -->
-        <?php
-        // Count stats from query result (pre-fetch)
-        $rows_data = [];
-        $total_lelang_periode = $total_nilai = $lelang_selesai = 0;
-        while($row_tmp = mysqli_fetch_assoc($laporan)) {
-            $rows_data[] = $row_tmp;
-            $total_lelang_periode++;
-            if($row_tmp['status']=='ditutup'){$lelang_selesai++;$total_nilai+=$row_tmp['harga_akhir'];}
-        }
-        ?>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:var(--primary-50)"><i class="fas fa-list text-2xl" style="color:var(--primary-600)"></i></div>
-                    <div class="text-right"><span class="text-3xl font-bold counter" style="color:var(--primary-800)" data-target="<?php echo $total_lelang_periode; ?>">0</span><span class="text-xs block mt-1" style="color:var(--primary-500)">Periode ini</span></div>
-                </div>
-                <h3 class="text-gray-600 font-medium">Total Lelang Periode</h3>
-                <div class="flex items-center mt-3 text-sm"><span class="flex items-center px-3 py-1.5 rounded-full hover:scale-105 transition-transform" style="background:var(--primary-50);color:var(--primary-600)"><i class="fas fa-calendar mr-2"></i>Hasil filter</span></div>
-            </div>
-            <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:#dcfce7"><i class="fas fa-check-circle text-2xl text-green-600"></i></div>
-                    <div class="text-right"><span class="text-3xl font-bold counter text-green-700" data-target="<?php echo $lelang_selesai; ?>">0</span><span class="text-xs text-green-600 block mt-1 flex items-center justify-end"><i class="fas fa-check mr-1"></i>Selesai</span></div>
-                </div>
-                <h3 class="text-gray-600 font-medium">Lelang Selesai</h3>
-                <div class="flex items-center mt-3 text-sm"><span class="text-green-700 flex items-center px-3 py-1.5 rounded-full hover:scale-105 transition-transform" style="background:#dcfce7"><i class="fas fa-check-circle mr-2 animate-pulse"></i>100% verified</span></div>
-            </div>
-            <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:var(--primary-50)"><i class="fas fa-money-bill-wave text-2xl" style="color:var(--primary-600)"></i></div>
-                </div>
-                <h3 class="text-gray-600 font-medium text-sm">Total Nilai Transaksi</h3>
-                <p class="text-xl font-bold mt-1" style="color:var(--primary-700)"><?php echo formatRupiah($total_nilai); ?></p>
-                <div class="flex items-center mt-3 text-sm"><span class="flex items-center px-3 py-1.5 rounded-full hover:scale-105 transition-transform" style="background:var(--primary-50);color:var(--primary-600)"><i class="fas fa-chart-line mr-2"></i>Kumulatif selesai</span></div>
-            </div>
         </div>
 
         <!-- Table -->
@@ -379,27 +501,63 @@ $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t 
                     </tfoot>
                 </table>
             </div>
+        </div>
 
-            <!-- Summary Footer -->
-            <div class="p-6 border-t" style="background:var(--primary-50);border-color:var(--primary-100)">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="text-center p-4 bg-white rounded-xl shadow-sm border hover:shadow-lg transition-all hover:scale-105" style="border-color:var(--primary-100)">
-                        <p class="text-sm mb-1" style="color:var(--primary-500)">Total Lelang</p>
-                        <p class="text-3xl font-bold" style="color:var(--primary-800)"><?php echo $total_lelang_periode; ?></p>
-                    </div>
-                    <div class="text-center p-4 bg-white rounded-xl shadow-sm border hover:shadow-lg transition-all hover:scale-105" style="border-color:var(--primary-100)">
-                        <p class="text-sm mb-1" style="color:var(--primary-500)">Lelang Selesai</p>
-                        <p class="text-3xl font-bold text-green-600"><?php echo $lelang_selesai; ?></p>
-                    </div>
-                    <div class="text-center p-4 bg-white rounded-xl shadow-sm border hover:shadow-lg transition-all hover:scale-105" style="border-color:var(--primary-100)">
-                        <p class="text-sm mb-1" style="color:var(--primary-500)">Total Nilai Transaksi</p>
-                        <p class="text-2xl font-bold" style="color:var(--primary-700)"><?php echo formatRupiah($total_nilai); ?></p>
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border hover-glow mt-6" style="border-color:var(--primary-100)" data-aos="zoom-in">
+            <div class="p-6 border-b" style="border-color:var(--primary-100);background:linear-gradient(to right,var(--primary-50),white)">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold flex items-center" style="color:var(--primary-800)">
+                            <i class="fas fa-credit-card mr-2" style="color:var(--primary-500)"></i>Data Pembayaran Periode
+                        </h2>
+                        <p class="text-sm mt-1" style="color:var(--primary-500)"><?php echo formatTanggal($tanggal_dari); ?> s/d <?php echo formatTanggal($tanggal_sampai); ?></p>
                     </div>
                 </div>
-                <p class="text-sm text-center mt-4" style="color:var(--primary-400)">
-                    <i class="fas fa-sync-alt mr-1 spin-slow"></i>
-                    Data laporan periode <?php echo formatTanggal($tanggal_dari); ?> s/d <?php echo formatTanggal($tanggal_sampai); ?> • Terakhir: <span id="lastUpdate"><?php echo date('H:i:s'); ?></span> WIB
-                </p>
+            </div>
+            <div class="overflow-x-auto" style="padding:0 1rem">
+                <table class="w-full modern-table">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">No</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Tanggal Bayar</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Nama User</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Nama Barang</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Metode</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Jumlah</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Status</th>
+                            <th class="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:var(--primary-600)">Bukti</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $no=1; foreach($payment_rows as $row): ?>
+                        <tr style="animation-delay:<?php echo ($no-1)*0.04; ?>s">
+                            <td class="px-4 py-4 font-medium" style="color:var(--primary-700)"><?php echo $no++; ?></td>
+                            <td class="px-4 py-4"><?php echo formatTanggalWaktu($row['tanggal_pembayaran']); ?></td>
+                            <td class="px-4 py-4"><?php echo htmlspecialchars($row['nama_lengkap']); ?></td>
+                            <td class="px-4 py-4"><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                            <td class="px-4 py-4"><?php echo htmlspecialchars($row['metode_pembayaran'] ?: '-'); ?></td>
+                            <td class="px-4 py-4 font-semibold" style="color:var(--primary-700)"><?php echo formatRupiah($row['jumlah']); ?></td>
+                            <td class="px-4 py-4">
+                                <?php if(($row['status_pembayaran'] ?? '') === 'selesai'): ?>
+                                    <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Selesai</span>
+                                <?php else: ?>
+                                    <span class="badge badge-info"><i class="fas fa-info-circle mr-1"></i><?php echo htmlspecialchars(ucfirst($row['status_pembayaran'] ?? 'pending')); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-4"><?php echo htmlspecialchars($row['bukti_pembayaran'] ?: '-'); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if(empty($payment_rows)): ?>
+                        <tr><td colspan="8" class="px-4 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-20 h-20 rounded-full flex items-center justify-center mb-4 animate-float" style="background:var(--primary-50)"><i class="fas fa-receipt text-4xl" style="color:var(--primary-300)"></i></div>
+                                <p class="font-semibold text-lg" style="color:var(--primary-600)">Tidak ada data pembayaran</p>
+                                <p class="text-sm text-gray-500 mt-1">Coba ubah rentang tanggal filter</p>
+                            </div>
+                        </td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>

@@ -9,6 +9,7 @@ $is_admin = $_SESSION['id_level'] == 1;
 $tanggal_dari   = isset($_GET['dari']) ? mysqli_real_escape_string($conn, $_GET['dari']) : date('Y-m-01');
 $tanggal_sampai = isset($_GET['sampai']) ? mysqli_real_escape_string($conn, $_GET['sampai']) : date('Y-m-d');
 $status_filter  = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : 'all';
+$export_type    = isset($_GET['export']) ? mysqli_real_escape_string($conn, $_GET['export']) : '';
 
 // Validasi tanggal
 if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal_dari)) $tanggal_dari = date('Y-m-01');
@@ -52,6 +53,34 @@ while($r = mysqli_fetch_assoc($laporan)) {
     }
 }
 
+$pembayaran_query = "SELECT p.*, l.id_lelang, l.tgl_lelang, l.harga_akhir, b.nama_barang, u.nama_lengkap,
+                            COALESCE(p.created_at, CONCAT(l.tgl_lelang, ' 00:00:00')) as tanggal_pembayaran
+                     FROM tb_pembayaran p
+                     JOIN tb_lelang l ON p.id_lelang = l.id_lelang
+                     JOIN tb_barang b ON l.id_barang = b.id_barang
+                     JOIN tb_user u ON p.id_user = u.id_user
+                     WHERE DATE(COALESCE(p.created_at, CONCAT(l.tgl_lelang, ' 00:00:00'))) BETWEEN '$tanggal_dari' AND '$tanggal_sampai'
+                     ORDER BY tanggal_pembayaran DESC";
+$pembayaran_result = mysqli_query($conn, $pembayaran_query);
+
+if(!$pembayaran_result) {
+    die("Query Error: " . mysqli_error($conn));
+}
+
+$payment_rows = [];
+$total_pembayaran = 0;
+$total_pembayaran_selesai = 0;
+$total_nilai_pembayaran = 0;
+
+while($payment = mysqli_fetch_assoc($pembayaran_result)) {
+    $payment_rows[] = $payment;
+    $total_pembayaran++;
+    if(($payment['status_pembayaran'] ?? '') === 'selesai') {
+        $total_pembayaran_selesai++;
+        $total_nilai_pembayaran += floatval($payment['jumlah'] ?? 0);
+    }
+}
+
 // Helper functions
 if(!function_exists('formatRupiah')) {
     function formatRupiah($angka) {
@@ -70,6 +99,137 @@ if(!function_exists('formatTanggalWaktu')) {
         if($tanggal === null || $tanggal === '' || $tanggal == '0000-00-00 00:00:00') return '-';
         return date('d/m/Y H:i', strtotime($tanggal));
     }
+}
+
+if(!function_exists('escapeExcel')) {
+    function escapeExcel($value) {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if($export_type === 'excel') {
+    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+    header('Content-Disposition: attachment; filename=laporan-lelang-pembayaran-' . $tanggal_dari . '-sd-' . $tanggal_sampai . '.xls');
+    echo "<table border='1'>";
+    echo "<tr><th colspan='7'>Laporan Lelang</th></tr>";
+    echo "<tr><th>No</th><th>Tanggal</th><th>Nama Barang</th><th>Harga Awal</th><th>Harga Akhir</th><th>Pemenang</th><th>Status</th></tr>";
+    if(count($rows_data) > 0) {
+        foreach($rows_data as $i => $row) {
+            echo '<tr>';
+            echo '<td>' . ($i + 1) . '</td>';
+            echo '<td>' . escapeExcel(formatTanggal($row['tgl_lelang'])) . '</td>';
+            echo '<td>' . escapeExcel($row['nama_barang']) . '</td>';
+            echo '<td>' . escapeExcel(formatRupiah($row['harga_awal'])) . '</td>';
+            echo '<td>' . escapeExcel(formatRupiah($row['harga_akhir'])) . '</td>';
+            echo '<td>' . escapeExcel($row['pemenang'] ?: '-') . '</td>';
+            echo '<td>' . escapeExcel($row['status']) . '</td>';
+            echo '</tr>';
+        }
+    }
+    echo "</table><br>";
+    echo "<table border='1'>";
+    echo "<tr><th colspan='8'>Laporan Pembayaran</th></tr>";
+    echo "<tr><th>No</th><th>Tanggal Bayar</th><th>Nama User</th><th>Nama Barang</th><th>Metode</th><th>Jumlah</th><th>Status</th><th>Bukti</th></tr>";
+    if(count($payment_rows) > 0) {
+        foreach($payment_rows as $i => $row) {
+            echo '<tr>';
+            echo '<td>' . ($i + 1) . '</td>';
+            echo '<td>' . escapeExcel(formatTanggalWaktu($row['tanggal_pembayaran'])) . '</td>';
+            echo '<td>' . escapeExcel($row['nama_lengkap']) . '</td>';
+            echo '<td>' . escapeExcel($row['nama_barang']) . '</td>';
+            echo '<td>' . escapeExcel($row['metode_pembayaran'] ?: '-') . '</td>';
+            echo '<td>' . escapeExcel(formatRupiah($row['jumlah'])) . '</td>';
+            echo '<td>' . escapeExcel($row['status_pembayaran']) . '</td>';
+            echo '<td>' . escapeExcel($row['bukti_pembayaran'] ?: '-') . '</td>';
+            echo '</tr>';
+        }
+    }
+    echo "</table>";
+    exit;
+}
+
+if($export_type === 'pdf') {
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <title>Export PDF Laporan</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+            h1, h2 { margin: 0 0 12px; }
+            p { margin: 0 0 16px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px; font-size: 12px; text-align: left; }
+            th { background: #e2e8f0; }
+            .meta { margin-bottom: 20px; font-size: 13px; }
+        </style>
+    </head>
+    <body onload="window.print()">
+        <h1>Laporan Lelang dan Pembayaran</h1>
+        <p class="meta">Periode <?php echo formatTanggal($tanggal_dari); ?> s/d <?php echo formatTanggal($tanggal_sampai); ?></p>
+
+        <h2>Data Lelang</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>Nama Barang</th>
+                    <th>Harga Awal</th>
+                    <th>Harga Akhir</th>
+                    <th>Pemenang</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($rows_data as $i => $row): ?>
+                <tr>
+                    <td><?php echo $i + 1; ?></td>
+                    <td><?php echo formatTanggal($row['tgl_lelang']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                    <td><?php echo formatRupiah($row['harga_awal']); ?></td>
+                    <td><?php echo formatRupiah($row['harga_akhir']); ?></td>
+                    <td><?php echo htmlspecialchars($row['pemenang'] ?: '-'); ?></td>
+                    <td><?php echo htmlspecialchars($row['status']); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <h2>Data Pembayaran</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Tanggal Bayar</th>
+                    <th>Nama User</th>
+                    <th>Nama Barang</th>
+                    <th>Metode</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                    <th>Bukti</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($payment_rows as $i => $row): ?>
+                <tr>
+                    <td><?php echo $i + 1; ?></td>
+                    <td><?php echo formatTanggalWaktu($row['tanggal_pembayaran']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_lengkap']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                    <td><?php echo htmlspecialchars($row['metode_pembayaran'] ?: '-'); ?></td>
+                    <td><?php echo formatRupiah($row['jumlah']); ?></td>
+                    <td><?php echo htmlspecialchars($row['status_pembayaran']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bukti_pembayaran'] ?: '-'); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    <?php
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -606,13 +766,13 @@ if(!function_exists('formatTanggalWaktu')) {
                         </div>
                     </div>
                     <div class="mt-4 md:mt-0 flex gap-3">
-                        <button onclick="window.print()" class="flex items-center px-5 py-3 rounded-2xl font-semibold text-sm transition-all"
+                        <a href="?dari=<?php echo urlencode($tanggal_dari); ?>&sampai=<?php echo urlencode($tanggal_sampai); ?>&status=<?php echo urlencode($status_filter); ?>&export=pdf" class="flex items-center px-5 py-3 rounded-2xl font-semibold text-sm transition-all"
                                 style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3)"
                                 onmouseover="this.style.background='rgba(255,255,255,0.25)'"
                                 onmouseout="this.style.background='rgba(255,255,255,0.15)'">
-                            <i class="fas fa-print mr-2"></i>Cetak
-                        </button>
-                        <a href="#" onclick="alert('Fitur export Excel akan segera tersedia')" 
+                            <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                        </a>
+                        <a href="?dari=<?php echo urlencode($tanggal_dari); ?>&sampai=<?php echo urlencode($tanggal_sampai); ?>&status=<?php echo urlencode($status_filter); ?>&export=excel" 
                            class="flex items-center px-5 py-3 rounded-2xl font-semibold text-sm transition-all"
                            style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3)"
                            onmouseover="this.style.background='rgba(255,255,255,0.25)'"
@@ -622,54 +782,6 @@ if(!function_exists('formatTanggalWaktu')) {
                     </div>
                 </div>
             </div>
-
-            <!-- Stat Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <?php
-                $pct_selesai = $total_lelang > 0 ? round($lelang_selesai/$total_lelang*100) : 0;
-                $pct_aktif   = $total_lelang > 0 ? round($lelang_aktif/$total_lelang*100) : 0;
-                $stat_cards = [
-                    ['label' => 'Total Lelang', 'value' => $total_lelang, 'icon' => 'fa-gavel', 'color' => 'var(--primary-600)', 'bg' => 'var(--primary-50)', 'pct' => 100, 'delay' => 0, 'sub' => 'Periode ini'],
-                    ['label' => 'Lelang Aktif', 'value' => $lelang_aktif, 'icon' => 'fa-play-circle', 'color' => '#0891b2', 'bg' => '#ecfeff', 'pct' => $pct_aktif, 'delay' => 100, 'sub' => $pct_aktif.'% dari total'],
-                    ['label' => 'Lelang Selesai', 'value' => $lelang_selesai, 'icon' => 'fa-check-circle', 'color' => '#16a34a', 'bg' => '#f0fdf4', 'pct' => $pct_selesai, 'delay' => 200, 'sub' => $pct_selesai.'% dari total'],
-                ];
-                foreach($stat_cards as $sc):
-                ?>
-                <div class="stat-card" data-aos="fade-up" data-aos-delay="<?php echo $sc['delay']; ?>">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-sm font-medium" style="color: var(--secondary-500)"><?php echo $sc['label']; ?></p>
-                            <p class="text-3xl font-bold mt-1 counter" style="color: var(--primary-800)" data-target="<?php echo $sc['value']; ?>">0</p>
-                            <p class="text-xs mt-1" style="color: var(--secondary-400)"><?php echo $sc['sub']; ?></p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: <?php echo $sc['bg']; ?>">
-                            <i class="fas <?php echo $sc['icon']; ?> text-2xl" style="color: <?php echo $sc['color']; ?>"></i>
-                        </div>
-                    </div>
-                    <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--primary-100)">
-                        <div class="progress-bar h-full rounded-full" style="background: <?php echo $sc['color']; ?>; --target-width: <?php echo $sc['pct']; ?>%"></div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- Total Nilai Banner -->
-            <div class="rounded-2xl p-6 mb-6 flex items-center justify-between hover-glow" style="background: var(--primary-50); border: 1px solid var(--primary-100)" data-aos="fade-up">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: var(--primary-100)">
-                        <i class="fas fa-coins text-xl" style="color: var(--primary-600)"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium" style="color: var(--primary-500)">Total Nilai Transaksi Periode Ini</p>
-                        <p class="text-2xl font-bold" style="color: var(--primary-800)"><?php echo formatRupiah($total_nilai); ?></p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-sm" style="color: var(--secondary-400)"><?php echo formatTanggal($tanggal_dari); ?> — <?php echo formatTanggal($tanggal_sampai); ?></p>
-                    <p class="text-xs mt-1" style="color: var(--secondary-400)">Dari <?php echo $lelang_selesai; ?> lelang selesai</p>
-                </div>
-            </div>
-
             <!-- Filter Card -->
             <div class="bg-white rounded-2xl p-6 border mb-6 no-print hover-glow" style="border-color: var(--primary-100)" data-aos="fade-up">
                 <form method="GET" class="flex flex-col md:flex-row gap-4">
@@ -774,6 +886,71 @@ if(!function_exists('formatTanggalWaktu')) {
                                             </div>
                                             <p class="font-semibold text-lg" style="color: var(--primary-600)">Tidak ada data laporan</p>
                                             <p class="text-sm mt-2" style="color: var(--secondary-400)">Tidak ada lelang pada periode ini</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border overflow-hidden hover-glow mt-6" style="border-color: var(--primary-100)" data-aos="fade-up" data-aos-delay="150">
+                <div class="p-6 flex items-center justify-between" style="border-bottom: 1px solid var(--primary-100)">
+                    <div>
+                        <h2 class="text-xl font-bold" style="color: var(--primary-800)">
+                            <i class="fas fa-credit-card mr-2" style="color: var(--primary-500)"></i>
+                            Data Pembayaran Periode <?php echo formatTanggal($tanggal_dari); ?> – <?php echo formatTanggal($tanggal_sampai); ?>
+                        </h2>
+                        <p class="text-sm mt-1" style="color: var(--secondary-400)"><?php echo count($payment_rows); ?> data ditemukan</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto p-4">
+                    <table class="w-full modern-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Nama User</th>
+                                <th>Barang</th>
+                                <th>Metode</th>
+                                <th>Jumlah</th>
+                                <th>Status</th>
+                                <th>Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(count($payment_rows) > 0): ?>
+                                <?php foreach($payment_rows as $i => $row): ?>
+                                <tr class="bg-white" style="animation-delay: <?php echo $i * 0.05; ?>s">
+                                    <td><span class="font-bold text-sm" style="color: var(--primary-600)"><?php echo $i + 1; ?></span></td>
+                                    <td><?php echo formatTanggalWaktu($row['tanggal_pembayaran']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['nama_lengkap']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['nama_barang']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['metode_pembayaran'] ?: '-'); ?></td>
+                                    <td><span class="font-bold text-sm" style="color: var(--primary-600)"><?php echo formatRupiah($row['jumlah']); ?></span></td>
+                                    <td>
+                                        <?php if(($row['status_pembayaran'] ?? '') === 'selesai'): ?>
+                                            <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Selesai</span>
+                                        <?php elseif(($row['status_pembayaran'] ?? '') === 'dibayar'): ?>
+                                            <span class="badge badge-info"><i class="fas fa-hourglass-half mr-1"></i>Dibayar</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i><?php echo htmlspecialchars(ucfirst($row['status_pembayaran'] ?? 'pending')); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($row['bukti_pembayaran'] ?: '-'); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="8" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mb-4 animate-float">
+                                                <i class="fas fa-receipt text-3xl" style="color: var(--primary-300)"></i>
+                                            </div>
+                                            <p class="font-semibold text-lg" style="color: var(--primary-600)">Tidak ada data pembayaran</p>
+                                            <p class="text-sm mt-2" style="color: var(--secondary-400)">Tidak ada pembayaran pada periode ini</p>
                                         </div>
                                     </td>
                                 </tr>
