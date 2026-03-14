@@ -4,6 +4,8 @@ require_once('../config/config.php');
 checkLevel([1, 2]); // Admin dan Petugas
 
 $is_admin = $_SESSION['id_level'] == 1;
+$barang_upload_dir = '../uploads/barang/';
+$barang_image_url = '../uploads/barang/';
 
 // Definisikan fungsi bantuan jika belum ada
 if (!function_exists('formatRupiah')) {
@@ -33,8 +35,8 @@ if(isset($_GET['delete'])) {
     
     // Delete image file if exists
     $barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM tb_barang WHERE id_barang = $id"));
-    if($barang['gambar'] && file_exists('../uploads/barang/' . $barang['gambar'])) {
-        unlink('../uploads/barang/' . $barang['gambar']);
+    if($barang['gambar'] && file_exists($barang_upload_dir . $barang['gambar'])) {
+        unlink($barang_upload_dir . $barang['gambar']);
     }
     
     if(mysqli_query($conn, "DELETE FROM tb_barang WHERE id_barang = $id")) {
@@ -652,9 +654,9 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <?php if($row['gambar'] && file_exists('../uploads/barang/' . $row['gambar'])): ?>
+                                        <?php if($row['gambar'] && file_exists($barang_upload_dir . $row['gambar'])): ?>
                                             <div class="relative group w-16 h-16">
-                                                <img src="../uploads/barang/<?php echo $row['gambar']; ?>" 
+                                                <img src="<?php echo $barang_image_url . $row['gambar']; ?>" 
                                                      alt="<?php echo htmlspecialchars($row['nama_barang']); ?>" 
                                                      class="w-16 h-16 object-cover rounded-xl shadow-md group-hover:scale-110 transition-all duration-300">
                                                 <div class="absolute inset-0 bg-primary-600 bg-opacity-0 group-hover:bg-opacity-30 rounded-xl transition-all duration-300 flex items-center justify-center">

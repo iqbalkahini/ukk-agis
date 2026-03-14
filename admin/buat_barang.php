@@ -4,6 +4,8 @@ require_once('../config/config.php');
 checkLevel([1, 2]); // Admin dan Petugas
 
 $is_admin = $_SESSION['id_level'] == 1;
+$barang_upload_dir = '../uploads/barang/';
+$barang_image_url = '../uploads/barang/';
 
 // Definisikan fungsi bantuan jika belum ada
 if (!function_exists('formatRupiah')) {
@@ -33,8 +35,8 @@ if(isset($_GET['delete'])) {
     
     // Delete image file if exists
     $barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM tb_barang WHERE id_barang = $id"));
-    if($barang['gambar'] && file_exists('../uploads/barang/' . $barang['gambar'])) {
-        unlink('../uploads/barang/' . $barang['gambar']);
+    if($barang['gambar'] && file_exists($barang_upload_dir . $barang['gambar'])) {
+        unlink($barang_upload_dir . $barang['gambar']);
     }
     
     if(mysqli_query($conn, "DELETE FROM tb_barang WHERE id_barang = $id")) {
@@ -63,9 +65,9 @@ if(isset($_POST['submit'])) {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         
         if(in_array($ext, $allowed)) {
-            // Create uploads directory if not exists
-            if(!is_dir('../uploads/barang')) {
-                mkdir('../uploads/barang', 0777, true);
+            // Create barang directory if not exists
+            if(!is_dir($barang_upload_dir)) {
+                mkdir($barang_upload_dir, 0777, true);
             }
             
             $gambar = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $filename);
@@ -75,12 +77,12 @@ if(isset($_POST['submit'])) {
             if(isset($_POST['id_barang']) && $_POST['id_barang'] != '') {
                 $id = intval($_POST['id_barang']);
                 $old = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM tb_barang WHERE id_barang = $id"));
-                if($old['gambar'] && file_exists('../uploads/barang/' . $old['gambar'])) {
-                    unlink('../uploads/barang/' . $old['gambar']);
+                if($old['gambar'] && file_exists($barang_upload_dir . $old['gambar'])) {
+                    unlink($barang_upload_dir . $old['gambar']);
                 }
             }
             
-            move_uploaded_file($_FILES['gambar']['tmp_name'], '../uploads/barang/' . $gambar);
+            move_uploaded_file($_FILES['gambar']['tmp_name'], $barang_upload_dir . $gambar);
             $gambar_query = ", gambar = '$gambar'";
         } else {
             $_SESSION['error'] = "Format file tidak diizinkan. Gunakan JPG, PNG, atau GIF";
@@ -779,7 +781,7 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                             
                             <div id="previewContainer" class="relative <?php echo ($edit_data && $edit_data['gambar']) ? '' : 'hidden'; ?>">
                                 <img id="previewImage" class="max-w-full h-64 rounded-xl mx-auto shadow-lg" 
-                                     src="<?php echo ($edit_data && $edit_data['gambar']) ? '../uploads/barang/' . $edit_data['gambar'] : ''; ?>" 
+                                     src="<?php echo ($edit_data && $edit_data['gambar']) ? $barang_image_url . $edit_data['gambar'] : ''; ?>" 
                                      alt="Preview">
                                 <button type="button" onclick="removeImage()" 
                                         class="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-all hover:scale-110 shadow-lg">
