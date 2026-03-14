@@ -54,7 +54,7 @@ if(isset($_POST['submit'])) {
     $tgl = $_POST['tgl'];
     $harga_awal = str_replace('.', '', $_POST['harga_awal']); // Remove dots from rupiah format
     $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi_barang']);
-    $status = $_POST['status_barang'];
+    $status = 'pending'; // Default status saat buat baru
     
     // Handle file upload
     $gambar_query = "";
@@ -98,8 +98,7 @@ if(isset($_POST['submit'])) {
                   nama_barang = '$nama_barang',
                   tgl = '$tgl',
                   harga_awal = '$harga_awal',
-                  deskripsi_barang = '$deskripsi',
-                  status_barang = '$status'
+                  deskripsi_barang = '$deskripsi'
                   $gambar_query
                   WHERE id_barang = $id";
         $message = "Barang berhasil diupdate";
@@ -659,14 +658,6 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                             Kelola data barang yang akan dilelang
                         </p>
                     </div>
-                    <div class="mt-4 md:mt-0">
-                        <div class="bg-white rounded-xl px-6 py-3 shadow-md border border-primary-100">
-                            <span class="text-primary-600 font-semibold flex items-center">
-                                <i class="fas fa-database mr-2"></i>
-                                Total: <span class="text-primary-800 ml-1"><?php echo $total_records; ?></span> barang
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -679,14 +670,6 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                             <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
                                    placeholder="Cari nama barang atau deskripsi..." 
                                    class="w-full pl-12 pr-4 py-3 border border-primary-200 rounded-xl focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all hover:border-primary-300">
-                        </div>
-                        <div class="md:w-48">
-                            <select name="status" class="w-full px-4 py-3 border border-primary-200 rounded-xl focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all hover:border-primary-300">
-                                <option value="">Semua Status</option>
-                                <option value="pending" <?php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Pending</option>
-                                <option value="dibuka" <?php echo $status_filter == 'dibuka' ? 'selected' : ''; ?>>Dibuka</option>
-                                <option value="ditutup" <?php echo $status_filter == 'ditutup' ? 'selected' : ''; ?>>Ditutup</option>
-                            </select>
                         </div>
                         <div class="flex gap-2">
                             <button type="submit" class="btn-primary px-6 py-3">
@@ -749,18 +732,6 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                                    class="form-input pl-12"
                                    onkeyup="formatRupiah(this)">
                         </div>
-                    </div>
-
-                    <!-- Status -->
-                    <div class="space-y-2">
-                        <label class="form-label">
-                            <i class="fas fa-tasks mr-2 text-primary-400"></i>Status
-                        </label>
-                        <select name="status_barang" class="form-input">
-                            <option value="pending" <?php echo ($edit_data['status_barang'] ?? '') == 'pending' ? 'selected' : ''; ?>>Pending</option>
-                            <option value="dibuka" <?php echo ($edit_data['status_barang'] ?? '') == 'dibuka' ? 'selected' : ''; ?>>Dibuka</option>
-                            <option value="ditutup" <?php echo ($edit_data['status_barang'] ?? '') == 'ditutup' ? 'selected' : ''; ?>>Ditutup</option>
-                        </select>
                     </div>
 
                     <!-- Gambar -->
