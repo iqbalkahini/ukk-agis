@@ -535,28 +535,22 @@ if(!function_exists('formatTanggalWaktu')) {
                 
                 <!-- Navigation -->
                 <nav class="space-y-2">
-                    <p class="text-xs uppercase tracking-wider text-primary-300 mb-4 px-4 font-semibold slide-in-left">Menu Utama</p>
+                    <p class="text-xs uppercase tracking-wider text-primary-300 mb-4 px-4 font-semibold" data-aos="fade-right">Menu Utama</p>
                     
-                    <a href="dashboard.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                        <i class="fas fa-home w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                        <span class="ml-3">Beranda</span>
-                        <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
+                    <a href="dashboard.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-home w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
+                    </a>
+                    <a href="data_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
+                        <i class="fas fa-box w-6 text-primary-600"></i>
+                        <span class="ml-3">Data Barang</span>
                     </a>
                     
-                    <div class="pt-4">
-                        <p class="text-xs uppercase tracking-wider text-primary-300 mb-2 px-4 font-semibold slide-in-left">Menu</p>
-                        <a href="data_barang.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
-                            <i class="fas fa-box w-6 text-primary-400 group-hover:text-primary-600 transition-colors"></i>
-                            <span class="ml-3">Data Barang</span>
-                            <i class="fas fa-arrow-right ml-auto opacity-0 group-hover:opacity-100 transition-all text-primary-400 group-hover:translate-x-1"></i>
-                        </a>
-
-                        <a href="laporan.php" class="flex items-center px-4 py-3 gradient-bg text-white rounded-xl shadow-md transition-all duration-200 group">
-                            <i class="fas fa-chart-bar w-6 text-white"></i>
-                            <span class="ml-3 font-semibold">Laporan</span>
-                            <span class="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">Aktif</span>
-                        </a>
-                    </div>
+                    <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
+                    </a>
                 </nav>
             </div>
             

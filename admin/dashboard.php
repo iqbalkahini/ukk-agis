@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once('../config/config.php');
-checkLevel([2]); // Hanya petugas
+checkLevel([1]); // Hanya admin yang bisa akses halaman ini
 
 // Handle delete
 if(isset($_GET['delete'])) {
@@ -79,7 +79,6 @@ $users = mysqli_query($conn, "SELECT * FROM tb_user $where ORDER BY id_user DESC
 $total_user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_user"))['total'];
 $total_peserta = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_user WHERE id_level = 3"))['total'];
 $total_petugas = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_user WHERE id_level = 2"))['total'];
-$total_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_user WHERE status = 'aktif'"))['total'];
 $total_lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status='dibuka'"))['total'];
 ?>
@@ -213,46 +212,24 @@ $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                             </p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/20">
-                        <div class="text-center transform group-hover:scale-110 transition-transform">
-                            <p class="text-2xl font-bold counter" data-target="<?php echo $total_lelang; ?>">0</p>
-                            <p class="text-xs text-white/80">Total Lelang</p>
-                        </div>
-                        <div class="text-center transform group-hover:scale-110 transition-transform">
-                            <p class="text-2xl font-bold counter" data-target="<?php echo $lelang_aktif; ?>">0</p>
-                            <p class="text-xs text-white/80">Aktif</p>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Navigation -->
-                <nav class="space-y-1">
-                    <p class="text-xs uppercase tracking-wider mb-3 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
-                    <a href="dashboard.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-home w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                <nav class="space-y-2">
+                    <p class="text-xs uppercase tracking-wider text-primary-300 mb-4 px-4 font-semibold" data-aos="fade-right">Menu Utama</p>
+                    
+                    <a href="dashboard.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-home w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
                     </a>
-                    <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
+                    <a href="data_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
+                        <i class="fas fa-box w-6 text-primary-600"></i>
+                        <span class="ml-3">Data Barang</span>
                     </a>
-                    <a href="kelola_lelang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-gavel w-6 group-hover:rotate-12 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Kelola Lelang</span>
-                    </a>
-                    <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
-                    </a>
-                    <!-- Active: Data User -->
-                    <a href="data_user.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all duration-200 group relative overflow-hidden">
-                        <i class="fas fa-users w-6 text-white group-hover:scale-110 transition-transform"></i>
-                        <span class="ml-3 font-medium">Data User</span>
-                        <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all"></i>
-                        <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
-                    </a>
-                    <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                        <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+
+                    <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
                     </a>
                 </nav>
@@ -353,22 +330,6 @@ $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                     <h3 class="font-medium text-gray-600">Total Peserta</h3>
                     <div class="w-full rounded-full h-1.5 mt-3" style="background:#e6f7e6">
                         <div class="h-1.5 rounded-full progress-bar" style="--target-width:<?php echo $total_user > 0 ? round($total_peserta/$total_user*100) : 0; ?>%;background:#0a5e0a"></div>
-                    </div>
-                </div>
-
-                <div class="stat-card" data-aos="fade-up" data-aos-delay="400">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:#fff8e1">
-                            <i class="fas fa-user-check text-2xl text-yellow-600"></i>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-3xl font-bold counter text-yellow-700" data-target="<?php echo $total_aktif; ?>">0</span>
-                            <span class="text-xs text-yellow-600 block mt-1">Aktif</span>
-                        </div>
-                    </div>
-                    <h3 class="font-medium text-gray-600">User Aktif</h3>
-                    <div class="w-full rounded-full h-1.5 mt-3" style="background:#fff8e1">
-                        <div class="h-1.5 rounded-full progress-bar" style="--target-width:<?php echo $total_user > 0 ? round($total_aktif/$total_user*100) : 0; ?>%;background:#ca8a04"></div>
                     </div>
                 </div>
             </div>

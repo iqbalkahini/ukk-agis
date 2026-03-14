@@ -604,20 +604,16 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                         <i class="fas fa-home w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
                     </a>
-                    
-                    <div class="pt-4">
-                        <p class="text-xs uppercase tracking-wider text-primary-300 mb-2 px-4 font-semibold" data-aos="fade-right">Menu</p>
-                        <a href="data_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
-                            <i class="fas fa-box w-6 text-primary-600"></i>
-                            <span class="ml-3">Data Barang</span>
-                            <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
-                        </a>
+                    <a href="data_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
+                        <i class="fas fa-box w-6 text-primary-600"></i>
+                        <span class="ml-3">Data Barang</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
+                    </a>
 
-                        <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
-                            <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
-                            <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
-                        </a>
-                    </div>
+                    <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
+                    </a>
                 </nav>
             </div>
             
