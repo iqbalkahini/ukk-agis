@@ -46,13 +46,92 @@ if(isset($_GET['delete'])) {
     exit;
 }
 
-// Pagination and Search
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
-$allowed_limits = [10, 25, 50];
-if (!in_array($limit, $allowed_limits, true)) {
-    $limit = 10;
+// Handle Add/Edit
+if(isset($_POST['submit'])) {
+    $nama_barang = mysqli_real_escape_string($conn, $_POST['nama_barang']);
+    $tgl = $_POST['tgl'];
+    $harga_awal = str_replace('.', '', $_POST['harga_awal']); // Remove dots from rupiah format
+    $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi_barang']);
+    $status = $_POST['status_barang'];
+    
+    // Handle file upload
+    $gambar_query = "";
+    $gambar_value = "";
+    if(isset($_FILES['gambar']) && $_FILES['gambar']['error'] == 0) {
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $filename = $_FILES['gambar']['name'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        
+        if(in_array($ext, $allowed)) {
+            // Create uploads directory if not exists
+            if(!is_dir('../uploads/barang')) {
+                mkdir('../uploads/barang', 0777, true);
+            }
+            
+            $gambar = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $filename);
+            $gambar_value = $gambar;
+            
+            // If update, delete old image
+            if(isset($_POST['id_barang']) && $_POST['id_barang'] != '') {
+                $id = intval($_POST['id_barang']);
+                $old = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM tb_barang WHERE id_barang = $id"));
+                if($old['gambar'] && file_exists('../uploads/barang/' . $old['gambar'])) {
+                    unlink('../uploads/barang/' . $old['gambar']);
+                }
+            }
+            
+            move_uploaded_file($_FILES['gambar']['tmp_name'], '../uploads/barang/' . $gambar);
+            $gambar_query = ", gambar = '$gambar'";
+        } else {
+            $_SESSION['error'] = "Format file tidak diizinkan. Gunakan JPG, PNG, atau GIF";
+            header('Location: data_barang.php' . (isset($_POST['id_barang']) ? '?edit=' . $_POST['id_barang'] : ''));
+            exit;
+        }
+    }
+    
+    if(isset($_POST['id_barang']) && $_POST['id_barang'] != '') {
+        // Update
+        $id = intval($_POST['id_barang']);
+        $query = "UPDATE tb_barang SET 
+                  nama_barang = '$nama_barang',
+                  tgl = '$tgl',
+                  harga_awal = '$harga_awal',
+                  deskripsi_barang = '$deskripsi',
+                  status_barang = '$status'
+                  $gambar_query
+                  WHERE id_barang = $id";
+        $message = "Barang berhasil diupdate";
+    } else {
+        // Insert
+        if($gambar_value) {
+            $query = "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, status_barang, gambar) 
+                      VALUES ('$nama_barang', '$tgl', '$harga_awal', '$deskripsi', '$status', '$gambar_value')";
+        } else {
+            $query = "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, status_barang) 
+                      VALUES ('$nama_barang', '$tgl', '$harga_awal', '$deskripsi', '$status')";
+        }
+        $message = "Barang berhasil ditambahkan";
+    }
+    
+    if(mysqli_query($conn, $query)) {
+        $_SESSION['success'] = $message;
+    } else {
+        $_SESSION['error'] = "Gagal menyimpan data: " . mysqli_error($conn);
+    }
+    header('Location: data_barang.php');
+    exit;
 }
+
+// Get data for edit
+$edit_data = null;
+if(isset($_GET['edit'])) {
+    $id = intval($_GET['edit']);
+    $edit_data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM tb_barang WHERE id_barang = $id"));
+}
+
+// Pagination and Search
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$limit = 10;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
@@ -71,9 +150,6 @@ $total_query = "SELECT COUNT(*) as total FROM tb_barang $where_clause";
 $total_result = mysqli_query($conn, $total_query);
 $total_records = $total_result ? mysqli_fetch_assoc($total_result)['total'] : 0;
 $total_pages = ceil($total_records / $limit);
-$pending_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'pending'"))['total'] ?? 0;
-$dibuka_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'dibuka'"))['total'] ?? 0;
-$ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'ditutup'"))['total'] ?? 0;
 
 // Get barang data
 $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id_barang DESC LIMIT $offset, $limit");
@@ -239,6 +315,31 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
             background: linear-gradient(90deg, white, var(--primary-50));
         }
         
+        /* Form Input Styles */
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--primary-200);
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-400);
+            box-shadow: 0 0 0 3px rgba(65, 110, 180, 0.15);
+            transform: scale(1.02);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-700);
+            font-size: 0.875rem;
+        }
+        
         /* Badge Styles */
         .badge {
             padding: 6px 14px;
@@ -390,6 +491,29 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
             animation: spin 1s linear infinite;
         }
         
+        /* File Upload Area */
+        .upload-area {
+            border: 2px dashed var(--primary-200);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--primary-50);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-400);
+            background: white;
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px -5px rgba(65, 110, 180, 0.2);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary-600);
+            background: var(--primary-100);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body class="antialiased text-gray-800">
@@ -483,11 +607,11 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                     <a href="data_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
                         <i class="fas fa-box w-6 text-primary-600"></i>
                         <span class="ml-3">Data Barang</span>
-                        <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
                     </a>
                     <a href="buat_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
                         <i class="fas fa-plus w-6 text-primary-600"></i>
                         <span class="ml-3">Buat Barang</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
                     </a>
                     <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
                         <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
@@ -527,54 +651,18 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
             <div class="mb-8" data-aos="fade-down">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold text-primary-800 mb-2">Data Barang</h1>
+                        <h1 class="text-3xl font-bold text-primary-800 mb-2">Kelola Barang</h1>
                         <p class="text-primary-500 flex items-center">
-                            <i class="fas fa-layer-group mr-2"></i>
-                            Lihat daftar barang lelang dan kelola aksi edit atau hapus
+                            <i class="fas fa-box mr-2"></i>
+                            Kelola data barang yang akan dilelang
                         </p>
                     </div>
-                    <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
-                        <a href="buat_barang.php" class="btn-primary px-6 py-3 text-center">
-                            <i class="fas fa-plus mr-2"></i>Tambah Barang
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6" data-aos="fade-up">
-                <div class="card p-5">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-primary-500 uppercase tracking-[0.18em]">Pending</p>
-                            <p class="text-3xl font-bold text-primary-800 mt-2"><?php echo $pending_count; ?></p>
-                            <p class="text-sm text-primary-400 mt-1">Menunggu dibuka</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center badge-warning">
-                            <i class="fas fa-clock text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card p-5">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-primary-500 uppercase tracking-[0.18em]">Dibuka</p>
-                            <p class="text-3xl font-bold text-primary-800 mt-2"><?php echo $dibuka_count; ?></p>
-                            <p class="text-sm text-primary-400 mt-1">Lelang aktif berjalan</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center badge-success">
-                            <i class="fas fa-gavel text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card p-5">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-primary-500 uppercase tracking-[0.18em]">Ditutup</p>
-                            <p class="text-3xl font-bold text-primary-800 mt-2"><?php echo $ditutup_count; ?></p>
-                            <p class="text-sm text-primary-400 mt-1">Sudah selesai diproses</p>
-                        </div>
-                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center badge-danger">
-                            <i class="fas fa-box-archive text-xl"></i>
+                    <div class="mt-4 md:mt-0">
+                        <div class="bg-white rounded-xl px-6 py-3 shadow-md border border-primary-100">
+                            <span class="text-primary-600 font-semibold flex items-center">
+                                <i class="fas fa-database mr-2"></i>
+                                Total: <span class="text-primary-800 ml-1"><?php echo $total_records; ?></span> barang
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -602,185 +690,140 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id
                             <button type="submit" class="btn-primary px-6 py-3">
                                 <i class="fas fa-filter mr-2"></i>Filter
                             </button>
+                            <a href="data_barang.php" class="btn-outline px-6 py-3">
+                                <i class="fas fa-redo mr-2"></i>Perbarui
+                            </a>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-primary-100" data-aos="fade-up" data-aos-delay="200">
-                <div class="p-6 border-b border-primary-100 bg-gradient-to-r from-primary-50 to-white">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="text-2xl font-bold text-primary-800">
-                                <i class="fas fa-list mr-3 text-primary-500"></i>Daftar Barang
-                            </h2>
-                            <p class="text-primary-500 mt-1">Total <?php echo $total_records; ?> barang terdaftar</p>
-                        </div>
-                        <div class="bg-white px-4 py-2 rounded-xl border border-primary-200 shadow-sm hover:shadow-md transition-all">
-                            <span class="text-primary-600 font-semibold flex items-center">
-                                <i class="fas fa-filter mr-2 text-primary-400"></i>
-                                <?php echo $status_filter ? ucfirst($status_filter) : 'Semua Status'; ?>
-                            </span>
+            <!-- Form Add/Edit -->
+            <div class="card p-6 mb-8" data-aos="fade-up" data-aos-delay="100">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-primary-800">
+                        <i class="fas fa-<?php echo $edit_data ? 'edit' : 'plus-circle'; ?> mr-3 text-primary-500"></i>
+                        <?php echo $edit_data ? 'Edit Barang' : 'Tambah Barang Baru'; ?>
+                    </h2>
+                    <span class="bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold">
+                        <i class="fas fa-cube mr-2"></i>Masukan Data Barang
+                    </span>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" id="barangForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="hidden" name="id_barang" value="<?php echo $edit_data['id_barang'] ?? ''; ?>">
+                    
+                    <!-- Nama Barang -->
+                    <div class="space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-tag mr-2 text-primary-400"></i>Nama Barang
+                        </label>
+                        <input type="text" name="nama_barang" required
+                               value="<?php echo htmlspecialchars($edit_data['nama_barang'] ?? ''); ?>"
+                               placeholder="Masukkan nama barang"
+                               class="form-input">
+                    </div>
+
+                    <!-- Tanggal -->
+                    <div class="space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-calendar mr-2 text-primary-400"></i>Tanggal
+                        </label>
+                        <input type="date" name="tgl" required
+                               value="<?php echo $edit_data['tgl'] ?? date('Y-m-d'); ?>"
+                               class="form-input">
+                    </div>
+
+                    <!-- Harga Awal -->
+                    <div class="space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-money-bill-wave mr-2 text-primary-400"></i>Harga Awal
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary-500 font-semibold">Rp</span>
+                            <input type="text" name="harga_awal" id="harga_awal" required
+                                   value="<?php echo isset($edit_data['harga_awal']) ? number_format($edit_data['harga_awal'], 0, ',', '.') : ''; ?>"
+                                   placeholder="0"
+                                   class="form-input pl-12"
+                                   onkeyup="formatRupiah(this)">
                         </div>
                     </div>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full modern-table">
-                        <thead>
-                            <tr class="bg-transparent">
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">No</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Gambar</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Nama Barang</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Tanggal</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Harga Awal</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if($barang && mysqli_num_rows($barang) > 0): ?>
-                                <?php 
-                                $no = $offset + 1;
-                                while($row = mysqli_fetch_assoc($barang)): 
-                                ?>
-                                <tr class="bg-white" style="animation-delay: <?php echo ($no * 0.05); ?>s">
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center justify-center w-8 h-8 bg-primary-100 text-primary-700 rounded-xl font-bold">
-                                            <?php echo $no++; ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <?php if($row['gambar'] && file_exists('../uploads/barang/' . $row['gambar'])): ?>
-                                            <div class="relative group w-16 h-16">
-                                                <img src="../uploads/barang/<?php echo $row['gambar']; ?>" 
-                                                     alt="<?php echo htmlspecialchars($row['nama_barang']); ?>" 
-                                                     class="w-16 h-16 object-cover rounded-xl shadow-md group-hover:scale-110 transition-all duration-300">
-                                                <div class="absolute inset-0 bg-primary-600 bg-opacity-0 group-hover:bg-opacity-30 rounded-xl transition-all duration-300 flex items-center justify-center">
-                                                    <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-all duration-300"></i>
-                                                </div>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="w-16 h-16 bg-primary-100 rounded-xl flex items-center justify-center">
-                                                <i class="fas fa-image text-primary-400 text-2xl"></i>
-                                            </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <p class="font-bold text-primary-800"><?php echo htmlspecialchars($row['nama_barang']); ?></p>
-                                        <p class="text-sm text-gray-500 mt-1 line-clamp-2 max-w-xs"><?php echo htmlspecialchars($row['deskripsi_barang'] ?? '-'); ?></p>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center text-gray-700">
-                                            <i class="fas fa-calendar-alt mr-2 text-primary-400"></i>
-                                            <?php echo formatTanggal($row['tgl']); ?>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
-                                            <?php echo formatRupiah($row['harga_awal']); ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <?php if($row['status_barang'] == 'dibuka'): ?>
-                                            <span class="badge badge-success">
-                                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse-soft"></span>
-                                                Dibuka
-                                            </span>
-                                        <?php elseif($row['status_barang'] == 'ditutup'): ?>
-                                            <span class="badge badge-danger">
-                                                <i class="fas fa-stop-circle mr-1"></i>
-                                                Ditutup
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge badge-warning">
-                                                <i class="fas fa-clock mr-1"></i>
-                                                Pending
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col sm:flex-row gap-2">
-                                            <a href="buat_barang.php?edit=<?php echo $row['id_barang']; ?>" 
-                                               style="background:var(--primary-600);color:white;"
-                                               class="px-4 py-2 rounded-xl flex items-center transition-all hover:scale-105 hover:opacity-90 shadow-md">
-                                                <i class="fas fa-edit mr-2"></i>Edit
-                                            </a>
-                                            <a href="?delete=<?php echo $row['id_barang']; ?>" 
-                                               onclick="return confirmDelete(event, 'Yakin ingin menghapus barang <?php echo htmlspecialchars($row['nama_barang']); ?>?')"
-                                               style="background:var(--primary-100);color:var(--primary-700);border:1px solid var(--primary-200);"
-                                               class="px-4 py-2 rounded-xl flex items-center transition-all hover:scale-105">
-                                                <i class="fas fa-trash mr-2"></i>Hapus
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
-                                        <div class="flex flex-col items-center">
-                                            <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4 animate-float">
-                                                <i class="fas fa-box-open text-primary-400 text-3xl"></i>
-                                            </div>
-                                            <p class="text-primary-600 font-medium text-lg">Belum ada data barang</p>
-                                            <p class="text-sm text-primary-400 mt-2">Data barang akan muncul di sini</p>
-                                            <?php if(!$search && !$status_filter): ?>
-                                            <a href="buat_barang.php" class="btn-primary text-sm mt-4 px-6 py-2.5">
-                                                <i class="fas fa-plus mr-2"></i>Tambah Barang
-                                            </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Pagination -->
-                <?php if($total_pages > 1): ?>
-                <div class="p-4 bg-primary-50 border-t border-primary-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p class="text-sm text-primary-600">
-                        <i class="fas fa-info-circle mr-2 animate-pulse"></i>
-                        Menampilkan <?php echo $offset + 1; ?> - <?php echo min($offset + $limit, $total_records); ?> dari <?php echo $total_records; ?> barang
-                    </p>
-                    <div class="flex items-center space-x-3">
-                        <select class="text-sm border border-primary-200 rounded-lg px-3 py-2 bg-white text-primary-700 focus:ring-2 focus:ring-primary-100 transition-all hover:border-primary-300" onchange="changePerPage(this.value)">
-                            <option value="10" <?php echo $limit == 10 ? 'selected' : ''; ?>>10 per halaman</option>
-                            <option value="25" <?php echo $limit == 25 ? 'selected' : ''; ?>>25 per halaman</option>
-                            <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50 per halaman</option>
+
+                    <!-- Status -->
+                    <div class="space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-tasks mr-2 text-primary-400"></i>Status
+                        </label>
+                        <select name="status_barang" class="form-input">
+                            <option value="pending" <?php echo ($edit_data['status_barang'] ?? '') == 'pending' ? 'selected' : ''; ?>>Pending</option>
+                            <option value="dibuka" <?php echo ($edit_data['status_barang'] ?? '') == 'dibuka' ? 'selected' : ''; ?>>Dibuka</option>
+                            <option value="ditutup" <?php echo ($edit_data['status_barang'] ?? '') == 'ditutup' ? 'selected' : ''; ?>>Ditutup</option>
                         </select>
-                        <div class="flex space-x-2">
-                            <?php if($page > 1): ?>
-                            <a href="?page=<?php echo ($page - 1); ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
-                               class="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-primary-600 hover:bg-primary-600 hover:text-white transition-all border border-primary-200 hover:scale-110">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                            <?php endif; ?>
-                            
-                            <?php
-                            $start = max(1, $page - 2);
-                            $end = min($total_pages, $page + 2);
-                            for($i = $start; $i <= $end; $i++):
-                            ?>
-                            <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
-                               class="w-9 h-9 flex items-center justify-center rounded-xl <?php echo $i == $page ? 'bg-primary-600 text-white' : 'bg-white text-primary-600 hover:bg-primary-50'; ?> transition-all border border-primary-200 hover:scale-110">
-                                <?php echo $i; ?>
-                            </a>
-                            <?php endfor; ?>
-                            
-                            <?php if($page < $total_pages): ?>
-                            <a href="?page=<?php echo ($page + 1); ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
-                               class="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-primary-600 hover:bg-primary-600 hover:text-white transition-all border border-primary-200 hover:scale-110">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                            <?php endif; ?>
-                        </div>
                     </div>
-                </div>
-                <?php endif; ?>
+
+                    <!-- Gambar -->
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-image mr-2 text-primary-400"></i>Gambar Barang
+                        </label>
+                        
+                        <!-- Upload Area -->
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" name="gambar" accept="image/*" class="hidden" onchange="previewImage(event)">
+                            
+                            <div id="uploadPlaceholder" class="<?php echo ($edit_data && $edit_data['gambar']) ? 'hidden' : ''; ?>">
+                                <i class="fas fa-cloud-upload-alt text-5xl text-primary-300 mb-4 animate-float"></i>
+                                <p class="text-primary-600 font-medium">Klik atau drag & drop untuk upload gambar</p>
+                                <p class="text-sm text-primary-400 mt-2">Format: JPG, PNG, GIF, WEBP (Max 5MB)</p>
+                            </div>
+                            
+                            <div id="previewContainer" class="relative <?php echo ($edit_data && $edit_data['gambar']) ? '' : 'hidden'; ?>">
+                                <img id="previewImage" class="max-w-full h-64 rounded-xl mx-auto shadow-lg" 
+                                     src="<?php echo ($edit_data && $edit_data['gambar']) ? '../uploads/barang/' . $edit_data['gambar'] : ''; ?>" 
+                                     alt="Preview">
+                                <button type="button" onclick="removeImage()" 
+                                        class="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-all hover:scale-110 shadow-lg">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <?php if($edit_data && $edit_data['gambar']): ?>
+                            <p class="text-sm text-primary-500 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Gambar saat ini: <?php echo $edit_data['gambar']; ?> (akan diganti jika upload baru)
+                            </p>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Deskripsi -->
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="form-label">
+                            <i class="fas fa-align-left mr-2 text-primary-400"></i>Deskripsi
+                        </label>
+                        <textarea name="deskripsi_barang" rows="5"
+                                  placeholder="Masukkan deskripsi lengkap barang..."
+                                  class="form-input resize-none"><?php echo htmlspecialchars($edit_data['deskripsi_barang'] ?? ''); ?></textarea>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="md:col-span-2 flex flex-col sm:flex-row gap-4 mt-4">
+                        <button type="submit" name="submit" class="btn-primary flex-1 py-4 text-lg">
+                            <i class="fas fa-save mr-3"></i>
+                            <?php echo $edit_data ? 'UPDATE DATA BARANG' : 'TAMBAH BARANG BARU'; ?>
+                        </button>
+                        
+                        <?php if($edit_data): ?>
+                        <a href="data_barang.php" class="btn-outline flex-1 py-4 text-lg text-center">
+                            <i class="fas fa-times mr-3"></i>BATAL EDIT
+                        </a>
+                        <?php else: ?>
+                        <button type="reset" class="btn-outline flex-1 py-4 text-lg" onclick="resetForm()">
+                            <i class="fas fa-eraser mr-3"></i>BATAL EDIT
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                </form>
             </div>
             
             <!-- Footer Note -->
@@ -824,6 +867,88 @@ echo date('d') . ' ' . $_bulan[(int)date('n')] . ' ' . date('Y H:i:s');
             }
         }
         createParticles();
+
+        // Format Rupiah
+        function formatRupiah(input) {
+            let value = input.value.replace(/[^0-9]/g, '');
+            if(value) {
+                value = parseInt(value).toLocaleString('id-ID');
+                input.value = value;
+            }
+        }
+
+        // Preview Image
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (!file.type.startsWith('image/')) {
+                    showToast('File harus berupa gambar', 'error');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('Ukuran file maksimal 5MB', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('uploadPlaceholder').classList.add('hidden');
+                    document.getElementById('previewContainer').classList.remove('hidden');
+                    document.getElementById('previewImage').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Remove Image
+        function removeImage() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.getElementById('previewContainer').classList.add('hidden');
+            document.getElementById('previewImage').src = '';
+        }
+
+        // Drag and Drop
+        const dropArea = document.querySelector('.upload-area');
+        if(dropArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.remove('dragover');
+                });
+            });
+
+            dropArea.addEventListener('drop', (e) => {
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    document.getElementById('fileInput').files = e.dataTransfer.files;
+                    previewImage({ target: { files: [file] } });
+                } else {
+                    showToast('File harus berupa gambar', 'error');
+                }
+            });
+        }
+
+        // Reset Form
+        function resetForm() {
+            document.getElementById('barangForm').reset();
+            removeImage();
+        }
 
         // Confirm Delete
         function confirmDelete(event, message) {

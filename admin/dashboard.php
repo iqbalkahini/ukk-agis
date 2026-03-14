@@ -227,7 +227,10 @@ $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                         <i class="fas fa-box w-6 text-primary-600"></i>
                         <span class="ml-3">Data Barang</span>
                     </a>
-
+                    <a href="buat_barang.php" class="flex items-center px-4 py-3 bg-primary-50 text-primary-700 rounded-xl font-medium group relative overflow-hidden">
+                        <i class="fas fa-plus w-6 text-primary-600"></i>
+                        <span class="ml-3">Buat Barang</span>
+                    </a>
                     <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
                         <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
