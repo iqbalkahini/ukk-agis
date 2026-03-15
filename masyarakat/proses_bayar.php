@@ -25,29 +25,65 @@ $pembayaran_ada = mysqli_fetch_assoc($cek_bayar);
 
 $upload_success = false;
 $upload_message = '';
+$upload_dir = dirname(__DIR__) . '/uploads/bukti_bayar/';
+$upload_dir_db = 'bukti_bayar/';
 
 if(isset($_POST['submit_bayar'])){
   $metode_bayar = mysqli_real_escape_string($conn, $_POST['metode_bayar']);
-  $target_dir = "../uploads/bukti_bayar/";
-  if(!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-  $file_name = time().'_'.basename($_FILES["bukti_bayar"]["name"]);
-  $target_file = $target_dir.$file_name;
   $uploadOk = 1;
-  $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
-  $check = getimagesize($_FILES["bukti_bayar"]["tmp_name"]);
-  if($check===false){$upload_message='File bukan gambar!';$uploadOk=0;}
-  if($_FILES["bukti_bayar"]["size"]>5000000){$upload_message='File terlalu besar! Maksimal 5MB';$uploadOk=0;}
-  if(!in_array($imageFileType,['jpg','jpeg','png','gif'])){$upload_message='Hanya file JPG, JPEG, PNG & GIF!';$uploadOk=0;}
-  if($uploadOk==1){
-    if(move_uploaded_file($_FILES["bukti_bayar"]["tmp_name"],$target_file)){
+
+  if(!isset($_FILES['bukti_bayar']) || $_FILES['bukti_bayar']['error'] !== UPLOAD_ERR_OK){
+    $upload_message = 'File bukti pembayaran wajib dipilih.';
+    $uploadOk = 0;
+  }
+
+  if($uploadOk == 1 && !is_dir($upload_dir) && !mkdir($upload_dir, 0777, true)){
+    $upload_message = 'Folder upload bukti pembayaran tidak dapat dibuat.';
+    $uploadOk = 0;
+  }
+
+  if($uploadOk == 1){
+    @chmod(dirname($upload_dir), 0777);
+    @chmod($upload_dir, 0777);
+  }
+
+  if($uploadOk == 1 && !is_writable($upload_dir)){
+    $upload_message = 'Folder upload bukti pembayaran tidak bisa ditulis.';
+    $uploadOk = 0;
+  }
+
+  if($uploadOk == 1){
+    $original_name = basename($_FILES['bukti_bayar']['name']);
+    $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', $original_name);
+    $file_ext = strtolower(pathinfo($safe_name, PATHINFO_EXTENSION));
+    $file_name = 'bukti_' . $id_user . '_' . $id_lelang . '_' . time() . '.' . $file_ext;
+    $target_file = $upload_dir . $file_name;
+    $check = getimagesize($_FILES['bukti_bayar']['tmp_name']);
+
+    if($check === false){$upload_message='File bukan gambar!';$uploadOk=0;}
+    if($_FILES['bukti_bayar']['size'] > 5000000){$upload_message='File terlalu besar! Maksimal 5MB';$uploadOk=0;}
+    if(!in_array($file_ext,['jpg','jpeg','png','gif'])){$upload_message='Hanya file JPG, JPEG, PNG & GIF!';$uploadOk=0;}
+  }
+
+  if($uploadOk == 1){
+    if(move_uploaded_file($_FILES["bukti_bayar"]["tmp_name"], $target_file)){
       if($pembayaran_ada){
-        $q=mysqli_query($conn,"UPDATE tb_pembayaran SET jumlah='{$lelang['harga_akhir']}',metode_pembayaran='$metode_bayar',bukti_pembayaran='$file_name',status_pembayaran='dibayar' WHERE id_pembayaran='{$pembayaran_ada['id_pembayaran']}'");
+        $q=mysqli_query($conn,"UPDATE tb_pembayaran SET jumlah='{$lelang['harga_akhir']}',metode_pembayaran='$metode_bayar',bukti_pembayaran='" . $upload_dir_db . $file_name . "',status_pembayaran='dibayar' WHERE id_pembayaran='{$pembayaran_ada['id_pembayaran']}'");
+        if($q && !empty($pembayaran_ada['bukti_pembayaran'])){
+          $old_file = dirname(__DIR__) . '/uploads/' . ltrim($pembayaran_ada['bukti_pembayaran'], '/');
+          if(is_file($old_file) && $old_file !== $target_file){
+            unlink($old_file);
+          }
+        }
         $upload_success=$q;$upload_message=$q?'Pembayaran berhasil diupload!':'Gagal update: '.mysqli_error($conn);
       } else {
-        $q=mysqli_query($conn,"INSERT INTO tb_pembayaran (id_lelang,id_user,jumlah,metode_pembayaran,bukti_pembayaran,status_pembayaran) VALUES ('$id_lelang','$id_user','{$lelang['harga_akhir']}','$metode_bayar','$file_name','dibayar')");
+        $q=mysqli_query($conn,"INSERT INTO tb_pembayaran (id_lelang,id_user,jumlah,metode_pembayaran,bukti_pembayaran,status_pembayaran) VALUES ('$id_lelang','$id_user','{$lelang['harga_akhir']}','$metode_bayar','" . $upload_dir_db . $file_name . "','dibayar')");
         $upload_success=$q;$upload_message=$q?'Pembayaran berhasil diupload! Menunggu konfirmasi admin.':'Gagal simpan: '.mysqli_error($conn);
       }
-    } else {$upload_message='Terjadi kesalahan saat upload file!';}
+      if(!$q && is_file($target_file)){
+        unlink($target_file);
+      }
+    } else {$upload_message='Terjadi kesalahan saat upload file ke folder uploads/bukti_bayar!';}
   }
 }
 
