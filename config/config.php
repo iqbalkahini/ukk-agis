@@ -20,23 +20,51 @@ mysqli_set_charset($conn, "utf8mb4");
 define('BASE_URL', 'http://localhost/sistem-lelang-online/');
 
 // Function untuk format rupiah
-function formatRupiah($angka) {
+function formatRupiah($angka)
+{
     return 'Rp ' . number_format($angka, 0, ',', '.');
 }
 
 // Function untuk format tanggal Indonesia
-function formatTanggal($tanggal) {
+function formatTanggal($tanggal)
+{
     $bulan = array(
-        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        1 => 'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
     );
-    
+
     $pecah = explode('-', $tanggal);
-    return $pecah[2] . ' ' . $bulan[(int)$pecah[1]] . ' ' . $pecah[0];
+    return $pecah[2] . ' ' . $bulan[(int) $pecah[1]] . ' ' . $pecah[0];
+}
+
+// Function untuk mencari path gambar barang yang valid
+function resolveBarangImageUrl($filename)
+{
+    if (!$filename) return null;
+    $paths = [
+        ['file' => __DIR__ . '/../barang/' . $filename, 'url' => '../barang/' . $filename],
+        ['file' => __DIR__ . '/../uploads/barang/' . $filename, 'url' => '../uploads/barang/' . $filename],
+        ['file' => __DIR__ . '/../uploads/' . $filename, 'url' => '../uploads/' . $filename],
+    ];
+    foreach ($paths as $path) {
+        if (file_exists($path['file'])) return $path['url'];
+    }
+    return null;
 }
 
 // Function untuk cek login
-function checkLogin() {
+function checkLogin()
+{
     if (!isset($_SESSION['id_user'])) {
         header('Location: ' . BASE_URL . 'auth/login.php');
         exit;
@@ -44,12 +72,13 @@ function checkLogin() {
 }
 
 // Function untuk cek level akses
-function checkLevel($allowed_levels = []) {
+function checkLevel($allowed_levels = [])
+{
     if (!isset($_SESSION['id_level'])) {
         header('Location: ' . BASE_URL . 'auth/login.php');
         exit;
     }
-    
+
     if (!in_array($_SESSION['id_level'], $allowed_levels)) {
         header('Location: ' . BASE_URL);
         exit;

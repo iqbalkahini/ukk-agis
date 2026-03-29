@@ -240,14 +240,19 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
       $delay = $delays[$count % 6]; $count++;
     ?>
     <div class="item-card hover-glow" data-aos="fade-up" data-aos-delay="<?php echo $delay; ?>">
-      <div class="h-52 flex items-center justify-center relative" style="background:linear-gradient(135deg,var(--primary-50),var(--primary-100))">
-        <div class="w-20 h-20 rounded-2xl flex items-center justify-center animate-float gradient-bg shadow-xl">
-          <i class="fas fa-box text-white text-3xl"></i>
-        </div>
+      <?php $image_url = resolveBarangImageUrl($row['gambar'] ?? ''); ?>
+      <div class="h-52 flex items-center justify-center relative overflow-hidden" style="background:linear-gradient(135deg,var(--primary-50),var(--primary-100))">
+        <?php if ($image_url): ?>
+          <img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($row['nama_barang']); ?>" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+        <?php else: ?>
+          <div class="w-20 h-20 rounded-2xl flex items-center justify-center animate-float gradient-bg shadow-xl">
+            <i class="fas fa-box text-white text-3xl"></i>
+          </div>
+        <?php endif; ?>
         <div class="absolute top-4 right-4">
           <span class="badge-success animate-pulse-soft"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>Aktif</span>
         </div>
-        <div class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white" style="background:rgba(30,58,102,0.7)">
+        <div class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg" style="background:rgba(30,58,102,0.7); backdrop-filter:blur(4px)">
           <i class="fas fa-users mr-1"></i><?php echo $row['jumlah_penawaran']; ?> penawar
         </div>
       </div>

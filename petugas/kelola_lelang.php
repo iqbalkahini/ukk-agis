@@ -23,7 +23,7 @@ if(isset($_POST['create_lelang'])) {
     header('Location: kelola_lelang.php'); exit;
 }
 
-$lelang=mysqli_query($conn,"SELECT l.*,b.nama_barang,b.harga_awal,u.nama_lengkap as pemenang FROM tb_lelang l JOIN tb_barang b ON l.id_barang=b.id_barang LEFT JOIN tb_user u ON l.id_user=u.id_user ORDER BY l.id_lelang DESC");
+$lelang=mysqli_query($conn,"SELECT l.*,b.nama_barang,b.harga_awal,b.gambar,u.nama_lengkap as pemenang FROM tb_lelang l JOIN tb_barang b ON l.id_barang=b.id_barang LEFT JOIN tb_user u ON l.id_user=u.id_user ORDER BY l.id_lelang DESC");
 $barang_available=mysqli_query($conn,"SELECT * FROM tb_barang WHERE status_barang='pending' OR id_barang NOT IN (SELECT id_barang FROM tb_lelang WHERE status='dibuka')");
 $total_lelang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang"))['t'];
 $lelang_aktif=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
@@ -299,7 +299,12 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
                             <td class="px-4 py-4"><span class="font-bold text-sm" style="color:var(--primary-700)">#<?php echo $row['id_lelang']; ?></span></td>
                             <td class="px-4 py-4">
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-3" style="background:var(--primary-100);color:var(--primary-700)"><i class="fas fa-box"></i></div>
+                                    <?php $image_url = resolveBarangImageUrl($row['gambar'] ?? ''); ?>
+                                    <?php if ($image_url): ?>
+                                        <img src="<?php echo $image_url; ?>" alt="" class="w-10 h-10 rounded-xl object-cover mr-3 border" style="border-color:var(--primary-100)">
+                                    <?php else: ?>
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-3" style="background:var(--primary-100);color:var(--primary-700)"><i class="fas fa-box"></i></div>
+                                    <?php endif; ?>
                                     <div>
                                         <p class="font-semibold" style="color:var(--primary-800)"><?php echo htmlspecialchars($row['nama_barang']); ?></p>
                                         <p class="text-xs" style="color:var(--primary-500)">Tgl: <?php echo date('d/m/Y', strtotime($row['tgl_lelang'])); ?></p>

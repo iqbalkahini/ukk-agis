@@ -196,10 +196,15 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
     <div class="lg:col-span-2">
       <!-- Image & Status -->
       <div class="bg-white rounded-2xl shadow-lg overflow-hidden border hover-glow mb-6" style="border-color:var(--primary-100)" data-aos="fade-right">
-        <div class="h-72 flex items-center justify-center relative" style="background:linear-gradient(135deg,var(--primary-50),var(--primary-100))">
-          <div class="w-28 h-28 rounded-2xl flex items-center justify-center animate-float gradient-bg shadow-2xl">
-            <i class="fas fa-box text-white text-5xl"></i>
-          </div>
+        <?php $image_url = resolveBarangImageUrl($lelang['gambar'] ?? ''); ?>
+        <div class="h-72 flex items-center justify-center relative overflow-hidden" style="background:linear-gradient(135deg,var(--primary-50),var(--primary-100))">
+          <?php if ($image_url): ?>
+            <img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($lelang['nama_barang']); ?>" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105">
+          <?php else: ?>
+            <div class="w-28 h-28 rounded-2xl flex items-center justify-center animate-float gradient-bg shadow-2xl">
+              <i class="fas fa-box text-white text-5xl"></i>
+            </div>
+          <?php endif; ?>
           <div class="absolute top-4 right-4">
             <?php if($lelang['status'] == 'dibuka'): ?>
             <span class="px-4 py-2 bg-green-500 text-white rounded-full font-semibold flex items-center shadow-lg text-sm">
