@@ -13,7 +13,7 @@ $lelang_menang = mysqli_query($conn, "SELECT l.*, b.nama_barang, b.harga_awal,
 
 $total_menang    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_lelang WHERE id_user=$id_user AND status='ditutup'"))['t'];
 $total_lunas     = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_pembayaran WHERE id_user=$id_user AND status_pembayaran='selesai'"))['t'];
-$total_pending   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_pembayaran WHERE id_user=$id_user AND status_pembayaran='dibayar'"))['t'];
+$total_tunggu  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_pembayaran WHERE id_user=$id_user AND status_pembayaran='dibayar'"))['t'];
 $total_penawaran = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM history_lelang WHERE id_user=$id_user"))['t'];
 ?>
 <!DOCTYPE html>
@@ -133,7 +133,7 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
         </a>
         <a href="pembayaran.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all">
           <i class="fas fa-credit-card w-6"></i><span class="ml-3 font-medium">Pembayaran</span>
-          <?php if($total_pending > 0): ?><span class="ml-auto px-2 py-1 rounded-lg text-xs font-bold bg-white/20 animate-pulse-soft"><?php echo $total_pending; ?></span><?php endif; ?>
+          <?php if($total_tunggu > 0): ?><span class="ml-auto px-2 py-1 rounded-lg text-xs font-bold bg-white/20 animate-pulse-soft"><?php echo $total_tunggu; ?></span><?php endif; ?>
         </a>
       </div>
     </nav>
@@ -201,10 +201,10 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
         <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:var(--primary-50)">
           <i class="fas fa-clock text-2xl text-amber-600"></i>
         </div>
-        <span class="text-3xl font-bold" style="color:var(--primary-800)"><?php echo $total_pending; ?></span>
+        <span class="text-3xl font-bold" style="color:var(--primary-800)"><?php echo $total_tunggu; ?></span>
       </div>
       <h3 class="text-gray-600 font-medium">Menunggu Konfirmasi</h3>
-      <div class="mt-3 flex items-center text-sm"><span class="flex items-center px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 animate-pulse-soft"><i class="fas fa-clock mr-2"></i>Pending</span></div>
+      <div class="mt-3 flex items-center text-sm"><span class="flex items-center px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 animate-pulse-soft"><i class="fas fa-clock mr-2"></i>Tunggu</span></div>
     </div>
   </div>
 

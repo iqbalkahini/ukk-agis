@@ -8,7 +8,7 @@ $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
 $total_lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status = 'dibuka'"))['total'];
 $total_transaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'selesai'"))['total'];
-$pending_bayar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'pending'"))['total'];
+$tunggu_bayar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'tunggu'"))['total'];
 $total_nilai = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(jumlah) as total FROM tb_pembayaran WHERE status_pembayaran = 'selesai'"))['total'];
 
 // Get recent lelang
@@ -300,11 +300,11 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                             <i class="fas fa-clock text-2xl text-yellow-600"></i>
                         </div>
                         <div class="text-right">
-                            <span class="text-3xl font-bold counter text-yellow-700" data-target="<?php echo $pending_bayar; ?>">0</span>
+                            <span class="text-3xl font-bold counter text-yellow-700" data-target="<?php echo $tunggu_bayar; ?>">0</span>
                             <span class="text-xs text-yellow-600 block mt-1">Menunggu</span>
                         </div>
                     </div>
-                    <h3 class="font-medium text-gray-600">Pembayaran Pending</h3>
+                    <h3 class="font-medium text-gray-600">Pembayaran </h3>
                     <div class="flex items-center mt-3 text-sm">
                         <a href="pembayaran.php" class="flex items-center px-3 py-1.5 rounded-full hover:scale-105 transition-transform" style="background:#fff8e1;color:#7a5500">
                             <i class="fas fa-arrow-right mr-2 animate-bounce"></i>Proses sekarang
@@ -322,9 +322,9 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                             <p class="text-sm mt-1" style="color:var(--primary-500)">Grafik penawaran 7 hari terakhir</p>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="px-4 py-2 text-white rounded-xl text-sm font-medium hover:shadow-lg active:scale-95 transition-all" style="background:var(--primary-600)">Harian</button>
-                            <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 hover:bg-blue-50" style="color:var(--primary-600)">Mingguan</button>
-                            <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 hover:bg-blue-50" style="color:var(--primary-600)">Bulanan</button>
+                            <button class="chart-btn px-4 py-2 text-white rounded-xl text-sm font-medium hover:shadow-lg active:scale-95 transition-all" style="background:var(--primary-600)" data-period="harian">Harian</button>
+                            <button class="chart-btn px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 hover:bg-blue-50" style="color:var(--primary-600)" data-period="mingguan">Mingguan</button>
+                            <button class="chart-btn px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 hover:bg-blue-50" style="color:var(--primary-600)" data-period="bulanan">Bulanan</button>
                         </div>
                     </div>
                     <div class="h-80 relative">
@@ -365,8 +365,8 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm font-medium" style="color:var(--primary-800)">Pembayaran pending</p>
-                                <p class="text-xs mt-1" style="color:var(--primary-500)"><?php echo $pending_bayar; ?> menunggu konfirmasi</p>
+                                <p class="text-sm font-medium" style="color:var(--primary-800)">Pembayaran tunggu</p>
+                                <p class="text-xs mt-1" style="color:var(--primary-500)"><?php echo $tunggu_bayar; ?> menunggu konfirmasi</p>
                                 <p class="text-xs text-gray-400 mt-1 flex items-center"><i class="far fa-clock mr-1"></i>Perlu tindakan</p>
                             </div>
                         </div>
@@ -558,7 +558,7 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
             gradient.addColorStop(0, 'rgba(65,110,180,0.25)');
             gradient.addColorStop(1, 'rgba(65,110,180,0)');
-            new Chart(ctx, {
+            const auctionChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
@@ -573,6 +573,39 @@ $recent_lelang = mysqli_query($conn, "SELECT l.*, b.nama_barang FROM tb_lelang l
                         x: { grid: { display: false }, ticks: { color: '#64748b' } }
                     }
                 }
+            });
+
+            // Chart Period Buttons
+            const chartData = {
+                harian: {
+                    labels: ['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
+                    data: [8,14,11,16,20,25,18]
+                },
+                mingguan: {
+                    labels: ['Minggu 1','Minggu 2','Minggu 3','Minggu 4'],
+                    data: [45,62,58,80]
+                },
+                bulanan: {
+                    labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
+                    data: [120,98,150,140,175,160,190,210,180,220,200,240]
+                }
+            };
+
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.dataset.period;
+                    // Update active button style
+                    document.querySelectorAll('.chart-btn').forEach(b => {
+                        b.style.background = '';
+                        b.style.color = 'var(--primary-600)';
+                    });
+                    this.style.background = 'var(--primary-600)';
+                    this.style.color = 'white';
+                    // Update chart data
+                    auctionChart.data.labels = chartData[period].labels;
+                    auctionChart.data.datasets[0].data = chartData[period].data;
+                    auctionChart.update();
+                });
             });
         });
 

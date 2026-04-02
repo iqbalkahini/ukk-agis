@@ -296,7 +296,7 @@ $recent_bid = mysqli_query($conn, "SELECT h.*, b.nama_barang, l.status as status
         </div>
         <div class="text-right">
           <span class="text-3xl font-bold" style="color:var(--primary-800)"><?php echo $menunggu_bayar; ?></span>
-          <span class="text-xs block mt-1 text-amber-600">Pending</span>
+          <span class="text-xs block mt-1 text-amber-600">Tunggu</span>
         </div>
       </div>
       <h3 class="text-gray-600 font-medium">Menunggu Pembayaran</h3>

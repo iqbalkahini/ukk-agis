@@ -30,9 +30,9 @@ if(isset($_POST['tambah_barang'])) {
         }
     }
     if($gambar_value)
-        mysqli_query($conn, "INSERT INTO tb_barang (nama_barang,tgl,harga_awal,deskripsi_barang,gambar,status_barang) VALUES ('$nama','$tgl','$harga','$desk','$gambar_value','pending')");
+        mysqli_query($conn, "INSERT INTO tb_barang (nama_barang,tgl,harga_awal,deskripsi_barang,gambar,status_barang) VALUES ('$nama','$tgl','$harga','$desk','$gambar_value','tunggu')");
     else
-        mysqli_query($conn, "INSERT INTO tb_barang (nama_barang,tgl,harga_awal,deskripsi_barang,status_barang) VALUES ('$nama','$tgl','$harga','$desk','pending')");
+        mysqli_query($conn, "INSERT INTO tb_barang (nama_barang,tgl,harga_awal,deskripsi_barang,status_barang) VALUES ('$nama','$tgl','$harga','$desk','tunggu')");
     header('Location: data_barang.php'); exit;
 }
 
@@ -66,7 +66,7 @@ $barang = mysqli_query($conn, "SELECT * FROM tb_barang ORDER BY id_barang DESC")
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status='dibuka'"))['total'];
 $total_lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang"))['total'];
-$pending = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_barang WHERE status_barang='pending'"))['t'];
+$tunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_barang WHERE status_barang='tunggu'"))['t'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -295,10 +295,10 @@ $pending = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_
             <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
                 <div class="flex items-center justify-between mb-4">
                     <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:#fff8e1"><i class="fas fa-clock text-2xl text-yellow-600"></i></div>
-                    <span class="text-3xl font-bold text-yellow-700"><?php echo $pending; ?></span>
+                    <span class="text-3xl font-bold text-yellow-700"><?php echo $tunggu; ?></span>
                 </div>
                 <h3 class="text-gray-600 font-medium">Menunggu Lelang</h3>
-                <span class="text-xs px-3 py-1.5 rounded-full mt-3 inline-block" style="background:#fff8e1;color:#7a5500">Pending</span>
+                <span class="text-xs px-3 py-1.5 rounded-full mt-3 inline-block" style="background:#fff8e1;color:#7a5500">Tunggu</span>
             </div>
         </div>
 
@@ -400,7 +400,7 @@ $pending = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM tb_
                                 <?php elseif($row['status_barang'] == 'ditutup'): ?>
                                     <span class="badge badge-danger"><i class="fas fa-lock mr-1"></i>Ditutup</span>
                                 <?php else: ?>
-                                    <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Pending</span>
+                                    <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Tunggu</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4">

@@ -37,7 +37,7 @@ if(isset($_POST['tambah_barang'])) {
     $tgl = date('Y-m-d');
     $harga = (int)$_POST['harga_awal'];
     $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi_barang']);
-    $status = 'pending';
+    $status = 'tunggu';
     
     $gambar = '';
     if($_FILES['gambar']['name']) {
@@ -50,8 +50,8 @@ if(isset($_POST['tambah_barang'])) {
     header('Location: dashboard.php'); exit;
 }
 
-// Handle update barang
-if(isset($_POST['update_barang'])) {
+// Handle perbarui barang
+if(isset($_POST['perbarui_barang'])) {
     $id = (int)$_POST['id_barang'];
     $nama = mysqli_real_escape_string($conn, $_POST['nama_barang']);
     $harga = (int)$_POST['harga_awal'];
@@ -82,7 +82,7 @@ $barang_list = mysqli_query($conn, "SELECT * FROM tb_barang $where ORDER BY id_b
 
 // Statistics
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang"))['total'];
-$pending_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'pending'"))['total'];
+$tunggu_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'tunggu'"))['total'];
 $dibuka_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'dibuka'"))['total'];
 $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'ditutup'"))['total'];
 ?>
@@ -237,8 +237,8 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                     <p class="text-3xl font-extrabold text-blue-900"><?php echo $total_barang; ?></p>
                 </div>
                 <div class="stat-card">
-                    <p class="text-xs uppercase text-gray-400 font-bold mb-1">Pending</p>
-                    <p class="text-3xl font-extrabold text-orange-500"><?php echo $pending_count; ?></p>
+                    <p class="text-xs uppercase text-gray-400 font-bold mb-1">Tunggu</p>
+                    <p class="text-3xl font-extrabold text-orange-500"><?php echo $tunggu_count; ?></p>
                 </div>
                 <div class="stat-card">
                     <p class="text-xs uppercase text-gray-400 font-bold mb-1">Dibuka</p>
@@ -256,7 +256,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                     <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Cari barang..." class="form-input flex-1">
                     <select name="status" class="form-input w-40">
                         <option value="">Semua Status</option>
-                        <option value="pending" <?php echo $filter_status=='pending'?'selected':''; ?>>Pending</option>
+                        <option value="tunggu" <?php echo $filter_status=='tunggu'?'selected':''; ?>>Tunggu</option>
                         <option value="dibuka" <?php echo $filter_status=='dibuka'?'selected':''; ?>>Dibuka</option>
                         <option value="ditutup" <?php echo $filter_status=='ditutup'?'selected':''; ?>>Ditutup</option>
                     </select>
@@ -307,7 +307,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                                 <?php elseif($row['status_barang']=='ditutup'): ?>
                                     <span class="badge badge-danger">Ditutup</span>
                                 <?php else: ?>
-                                    <span class="badge badge-warning">Pending</span>
+                                    <span class="badge badge-warning">Tunggu</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4">
@@ -362,7 +362,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
         <div class="modal-box">
             <h3 class="text-xl font-bold mb-4">Edit Barang</h3>
             <form method="POST" enctype="multipart/form-data" class="space-y-4">
-                <input type="hidden" name="update_barang" value="1">
+                <input type="hidden" name="perbarui_barang" value="1">
                 <input type="hidden" name="id_barang" id="editId">
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Nama Barang</label>
@@ -375,7 +375,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Status</label>
                     <select name="status_barang" id="editStatus" class="form-input">
-                        <option value="pending">Pending</option>
+                        <option value="tunggu">Tunggu</option>
                         <option value="dibuka">Dibuka</option>
                         <option value="ditutup">Ditutup</option>
                     </select>
@@ -390,7 +390,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                 </div>
                 <div class="flex gap-4 pt-4">
                     <button type="button" onclick="closeModal('modalEdit')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">Batal</button>
-                    <button type="submit" class="flex-1 btn-primary">Update</button>
+                    <button type="submit" class="flex-1 btn-primary">Perbarui</button>
                 </div>
             </form>
         </div>

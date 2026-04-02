@@ -77,9 +77,9 @@ if (isset($_POST['submit'])) {
         $_SESSION['success'] = 'Barang berhasil diperbarui';
     } else {
         if ($gambar_value) {
-            mysqli_query($conn, "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, gambar, status_barang) VALUES ('$nama', '$tgl', '$harga', '$desk', '$gambar_value', 'pending')");
+            mysqli_query($conn, "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, gambar, status_barang) VALUES ('$nama', '$tgl', '$harga', '$desk', '$gambar_value', 'tunggu')");
         } else {
-            mysqli_query($conn, "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, status_barang) VALUES ('$nama', '$tgl', '$harga', '$desk', 'pending')");
+            mysqli_query($conn, "INSERT INTO tb_barang (nama_barang, tgl, harga_awal, deskripsi_barang, status_barang) VALUES ('$nama', '$tgl', '$harga', '$desk', 'tunggu')");
         }
         $_SESSION['success'] = 'Barang berhasil ditambahkan';
     }

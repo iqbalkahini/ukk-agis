@@ -8,7 +8,6 @@ $lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT l.*, b.nama_barang, b.d
 $history = mysqli_query($conn, "SELECT h.*, u.nama_lengkap FROM history_lelang h JOIN tb_user u ON h.id_user = u.id_user WHERE h.id_lelang = $id_lelang ORDER BY h.penawaran_harga DESC, h.created_at ASC");
 $total_penawaran = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM history_lelang WHERE id_lelang=$id_lelang"));
 
-// Stats sidebar
 $total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang"))['t'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_barang"))['t'];
@@ -134,10 +133,6 @@ $total_barang = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM
                 <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
                     <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
                     <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
-                </a>
-                <a href="data_user.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                    <i class="fas fa-users w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Data User</span>
                 </a>
                 <a href="laporan.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
                     <i class="fas fa-chart-bar w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>

@@ -76,7 +76,7 @@ $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id_barang DESC");
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status='dibuka'"))['total'];
-$pending = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang='pending'"))['total'];
+$tunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang='tunggu'"))['total'];
 $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
 ?>
 <!DOCTYPE html>
@@ -234,8 +234,8 @@ $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
             <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm" style="color:var(--primary-500)">Pending</p>
-                        <p class="text-3xl font-bold text-yellow-700"><?php echo $pending; ?></p>
+                        <p class="text-sm" style="color:var(--primary-500)">Tunggu</p>
+                        <p class="text-3xl font-bold text-yellow-700"><?php echo $tunggu; ?></p>
                     </div>
                     <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:#fff8e1"><i class="fas fa-clock text-2xl text-yellow-600"></i></div>
                 </div>
@@ -252,7 +252,7 @@ $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
                     <label class="block text-sm font-semibold mb-2" style="color:var(--primary-700)">Status</label>
                     <select name="status" class="form-input">
                         <option value="">Semua Status</option>
-                        <option value="pending" <?php echo $status === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                        <option value="tunggu" <?php echo $status === 'tunggu' ? 'selected' : ''; ?>>Tunggu</option>
                         <option value="dibuka" <?php echo $status === 'dibuka' ? 'selected' : ''; ?>>Dibuka</option>
                         <option value="ditutup" <?php echo $status === 'ditutup' ? 'selected' : ''; ?>>Ditutup</option>
                     </select>
@@ -311,7 +311,7 @@ $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
                                     <?php elseif (($row['status_barang'] ?? '') === 'ditutup'): ?>
                                         <span class="badge badge-danger"><i class="fas fa-lock mr-1"></i>Ditutup</span>
                                     <?php else: ?>
-                                        <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Pending</span>
+                                        <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Tunggu</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4">

@@ -64,7 +64,7 @@ if(!$pembayaran) {
 // Stats
 $stats_query = mysqli_query($conn, "SELECT status_pembayaran, jumlah FROM tb_pembayaran");
 $total_pembayaran = 0;
-$pembayaran_pending = 0;
+$pembayaran_tunggu = 0;
 $pembayaran_dibayar = 0;
 $pembayaran_selesai = 0;
 $total_nilai = 0;
@@ -72,7 +72,7 @@ $total_nilai = 0;
 if($stats_query) {
     while($temp = mysqli_fetch_assoc($stats_query)) {
         $total_pembayaran++;
-        if($temp['status_pembayaran'] == 'pending') $pembayaran_pending++;
+        if($temp['status_pembayaran'] == 'tunggu') $pembayaran_tunggu++;
         elseif($temp['status_pembayaran'] == 'dibayar') $pembayaran_dibayar++;
         elseif($temp['status_pembayaran'] == 'selesai') {
             $pembayaran_selesai++;
@@ -671,7 +671,7 @@ if(!function_exists('formatTanggal')) {
                 <?php
                 $cards = [
                     ['label' => 'Total Pembayaran', 'value' => $total_pembayaran, 'icon' => 'fa-file-invoice', 'color' => 'var(--primary-600)', 'bg' => 'var(--primary-50)', 'delay' => 0, 'pct' => 100],
-                    ['label' => 'Pending', 'value' => $pembayaran_pending, 'icon' => 'fa-clock', 'color' => '#d97706', 'bg' => '#fff7ed', 'delay' => 100, 'pct' => $total_pembayaran > 0 ? round($pembayaran_pending/$total_pembayaran*100) : 0],
+                    ['label' => 'Tungguu', 'value' => $pembayaran_tunggu, 'icon' => 'fa-clock', 'color' => '#d97706', 'bg' => '#fff7ed', 'delay' => 100, 'pct' => $total_pembayaran > 0 ? round($pembayaran_tunggu/$total_pembayaran*100) : 0],
                     ['label' => 'Menunggu Konfirmasi', 'value' => $pembayaran_dibayar, 'icon' => 'fa-hourglass-half', 'color' => '#0891b2', 'bg' => '#ecfeff', 'delay' => 200, 'pct' => $total_pembayaran > 0 ? round($pembayaran_dibayar/$total_pembayaran*100) : 0],
                     ['label' => 'Selesai', 'value' => $pembayaran_selesai, 'icon' => 'fa-check-circle', 'color' => '#16a34a', 'bg' => '#f0fdf4', 'delay' => 300, 'pct' => $total_pembayaran > 0 ? round($pembayaran_selesai/$total_pembayaran*100) : 0],
                 ];
@@ -707,7 +707,7 @@ if(!function_exists('formatTanggal')) {
                     <div class="w-full md:w-52">
                         <select name="status" class="filter-select">
                             <option value="all" <?php echo $status_filter == 'all' || $status_filter == '' ? 'selected' : ''; ?>>Semua Status</option>
-                            <option value="pending" <?php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Pending</option>
+                            <option value="tunggu" <?php echo $status_filter == 'tunggu' ? 'selected' : ''; ?>>Tunggu</option>
                             <option value="dibayar" <?php echo $status_filter == 'dibayar' ? 'selected' : ''; ?>>Menunggu Konfirmasi</option>
                             <option value="selesai" <?php echo $status_filter == 'selesai' ? 'selected' : ''; ?>>Selesai</option>
                         </select>
@@ -792,9 +792,9 @@ if(!function_exists('formatTanggal')) {
                                     <span class="text-xs" style="color: var(--secondary-400)"><?php echo date('H:i', strtotime($row['created_at'])); ?> WIB</span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php if($row['status_pembayaran'] == 'pending'): ?>
+                                    <?php if($row['status_pembayaran'] == 'tunggu'): ?>
                                         <span class="badge badge-warning">
-                                            <i class="fas fa-clock mr-1 text-[10px] animate-pulse"></i>Pending
+                                            <i class="fas fa-clock mr-1 text-[10px] animate-pulse"></i>Tunggu
                                         </span>
                                     <?php elseif($row['status_pembayaran'] == 'dibayar'): ?>
                                         <span class="badge badge-info">
@@ -872,7 +872,7 @@ if(!function_exists('formatTanggal')) {
                 <div class="mb-6">
                     <label class="block font-semibold mb-2 text-sm" style="color: var(--primary-700)">Status Pembayaran</label>
                     <select name="status_pembayaran" id="modal_status" class="filter-select">
-                        <option value="pending">⏳ Pending</option>
+                        <option value="tunggu">⏳ Tunggu</option>
                         <option value="dibayar">🔄 Dibayar - Menunggu Konfirmasi</option>
                         <option value="selesai">✅ Selesai</option>
                     </select>

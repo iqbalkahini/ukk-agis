@@ -225,11 +225,21 @@ if($export_type === 'pdf') {
         .form-input{width:100%;padding:0.625rem 1rem;border:1px solid var(--primary-200);border-radius:0.75rem;transition:all 0.3s;background:white;}
         .form-input:focus{outline:none;border-color:var(--primary-500);box-shadow:0 0 0 3px rgba(65,110,180,0.1);}
         ::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-track{background:var(--primary-50);border-radius:6px;}::-webkit-scrollbar-thumb{background:var(--primary-300);border-radius:6px;}::-webkit-scrollbar-thumb:hover{background:var(--primary-400);}
+        .spinner{width:40px;height:40px;border:3px solid var(--primary-200);border-top-color:var(--primary-600);border-radius:50%;animation:spin 1s linear infinite;}
         @media print{aside,nav,.no-print{display:none!important}main{padding:20px!important;width:100%!important}.gradient-bg{background:#1e3a66!important;-webkit-print-color-adjust:exact}}
     </style>
 </head>
 <body class="antialiased text-gray-800">
 <div id="particles"></div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 flex flex-col items-center">
+        <div class="spinner mb-4"></div>
+        <p style="color:var(--primary-600)" class="font-medium">Memuat data...</p>
+    </div>
+</div>
+
 <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2 no-print"></div>
 
 <!-- Navbar -->
@@ -251,78 +261,91 @@ if($export_type === 'pdf') {
                         <p class="text-sm font-semibold" style="color:var(--primary-800)"><?php echo $_SESSION['nama_lengkap']; ?></p>
                         <p class="text-xs flex items-center justify-end" style="color:var(--primary-500)"><i class="fas fa-circle text-green-500 text-[6px] mr-1 animate-pulse"></i><?php echo $is_admin?'Administrator':'Petugas'; ?></p>
                     </div>
-                    <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center text-white font-bold shadow-md hover:scale-110 transition-transform">
+                    <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center text-white font-bold shadow-md ring-2 hover:scale-110 transition-transform" style="ring-color:var(--primary-100)">
                         <?php echo strtoupper(substr($_SESSION['nama_lengkap'],0,1)); ?>
                     </div>
                 </div>
-                <a href="../auth/logout.php" onclick="return confirm('Yakin ingin keluar?')" class="text-sm py-2 px-4 flex items-center space-x-2 rounded-xl border transition-all hover:scale-105" style="color:var(--primary-600);border-color:var(--primary-200)">
-                    <i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline">Keluar</span>
+                <a href="../auth/logout.php" onclick="return confirm('Yakin ingin keluar?')" class="relative overflow-hidden group text-sm py-2 px-4 flex items-center space-x-2 rounded-xl border transition-all hover:scale-105" style="color:var(--primary-600);border-color:var(--primary-200)">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="hidden sm:inline">Keluar</span>
                 </a>
             </div>
         </div>
     </div>
 </nav>
 
-<div class="flex relative">
-    <!-- Sidebar -->
-    <aside class="w-72 bg-white border-r min-h-screen shadow-xl relative overflow-hidden no-print" style="border-color:var(--primary-100)">
-        <div class="absolute top-0 left-0 w-full h-1 gradient-bg"></div>
-        <div class="p-6 relative z-10">
-            <div class="gradient-bg rounded-2xl p-6 mb-6 text-white shadow-xl relative overflow-hidden group" data-aos="fade-right">
-                <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-8 -mb-8 group-hover:scale-150 transition-transform duration-700"></div>
-                <div class="flex items-center space-x-4 relative z-10">
-                    <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-2xl font-bold border-2 border-white/30 group-hover:scale-110 transition-transform">
-                        <?php echo strtoupper(substr($_SESSION['nama_lengkap'],0,1)); ?>
+    <div class="flex relative">
+        <!-- Sidebar identik admin -->
+        <aside class="w-72 bg-white border-r min-h-screen shadow-xl relative overflow-hidden" style="border-color:var(--primary-100);min-width:288px;flex-shrink:0;">
+            <div class="absolute top-0 left-0 w-full h-1 gradient-bg"></div>
+            <div class="p-6 relative z-10">
+                <!-- Profile Card -->
+                <div class="gradient-bg rounded-2xl p-6 mb-6 text-white shadow-xl relative overflow-hidden group" data-aos="fade-right">
+                    <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-8 -mb-8 group-hover:scale-150 transition-transform duration-700"></div>
+                    <div class="flex items-center space-x-4 relative z-10">
+                        <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-2xl font-bold border-2 border-white/30 group-hover:scale-110 transition-transform">
+                            <?php echo strtoupper(substr($_SESSION['nama_lengkap'], 0, 1)); ?>
+                        </div>
+                        <div>
+                            <p class="text-white/80 text-sm font-light">Selamat datang,</p>
+                            <p class="text-xl font-bold group-hover:translate-x-1 transition-transform"><?php echo $_SESSION['nama_lengkap']; ?></p>
+                            <p class="text-white/80 text-xs mt-1 flex items-center">
+                                <i class="fas fa-circle text-green-300 text-[6px] mr-2 animate-pulse"></i>Sedang Aktif
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-white/80 text-sm font-light">Selamat datang,</p>
-                        <p class="text-xl font-bold group-hover:translate-x-1 transition-transform"><?php echo $_SESSION['nama_lengkap']; ?></p>
-                        <p class="text-white/80 text-xs mt-1 flex items-center"><i class="fas fa-circle text-green-300 text-[6px] mr-2 animate-pulse"></i>Sedang Aktif</p>
-                    </div>
                 </div>
-            </div>
-            <nav class="space-y-1">
-                <p class="text-xs uppercase tracking-wider mb-3 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
-                <a href="dashboard.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                    <i class="fas fa-home w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
-                </a>
-                <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                    <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
-                </a>
-                <a href="kelola_lelang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                    <i class="fas fa-gavel w-6 group-hover:rotate-12 transition-transform" style="color:var(--primary-400)"></i>
-                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Kelola Lelang</span>
-                </a>
-                <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
-                    <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
-                    <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
-                </a>
-                <a href="laporan.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all duration-200 group relative overflow-hidden">
-                    <i class="fas fa-chart-bar w-6 text-white"></i>
-                    <span class="ml-3 font-medium">Laporan</span>
-                    <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all"></i>
-                    <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
-                </a>
-            </nav>
-        </div>
-        <div class="absolute bottom-6 left-6 right-6">
-            <div class="rounded-xl p-4 border hover:shadow-lg transition-all hover:scale-105 group" style="background:var(--primary-50);border-color:var(--primary-100)">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform"><i class="fas fa-headset text-lg" style="color:var(--primary-500)"></i></div>
-                    <div><p class="text-sm font-semibold" style="color:var(--primary-800)">Butuh Bantuan?</p><p class="text-xs flex items-center" style="color:var(--primary-500)"><i class="fas fa-envelope mr-1"></i>admin@lelang.com</p></div>
-                </div>
-                <div class="mt-3 pt-3" style="border-top:1px solid var(--primary-100)">
-                    <p class="text-xs text-center" style="color:var(--primary-400)"><i class="fas fa-circle text-green-500 text-[6px] mr-1 animate-pulse"></i>Dukungan 24/7</p>
-                </div>
-            </div>
-        </div>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-8" style="background:#f8fafc">
+                <!-- Navigation -->
+                <nav class="space-y-1">
+                    <p class="text-xs uppercase tracking-wider mb-3 px-4 font-semibold slide-in-left" style="color:var(--primary-300)">Menu Utama</p>
+                    <a href="dashboard.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-home w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
+                    </a>
+                    <a href="data_barang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-box w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Data Barang</span>
+                    </a>
+                    <a href="kelola_lelang.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-gavel w-6 group-hover:rotate-12 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Kelola Lelang</span>
+                    </a>
+                    <a href="pembayaran.php" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group hover:bg-blue-50" style="color:var(--primary-700)">
+                        <i class="fas fa-credit-card w-6 group-hover:scale-110 transition-transform" style="color:var(--primary-400)"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Pembayaran</span>
+                    </a>
+                    <a href="laporan.php" class="flex items-center px-4 py-3.5 gradient-bg text-white rounded-xl shadow-lg transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-chart-bar w-6 text-white"></i>
+                        <span class="ml-3 font-medium">Laporan</span>
+                        <i class="fas fa-chevron-right ml-auto text-sm opacity-0 group-hover:opacity-100 transition-all"></i>
+                        <span class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="absolute bottom-6 left-6 right-6">
+                <div class="rounded-xl p-4 border hover:shadow-lg transition-all hover:scale-105 group" style="background:var(--primary-50);border-color:var(--primary-100)">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform">
+                            <i class="fas fa-headset text-lg" style="color:var(--primary-500)"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold" style="color:var(--primary-800)">Butuh Bantuan?</p>
+                            <p class="text-xs flex items-center" style="color:var(--primary-500)"><i class="fas fa-envelope mr-1"></i>admin@lelang.com</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t" style="border-color:var(--primary-100)">
+                        <p class="text-xs text-center" style="color:var(--primary-400)"><i class="fas fa-circle text-green-500 text-[6px] mr-1 animate-pulse"></i>Dukungan 24/7</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8" style="background:var(--secondary-50);min-width:0;overflow:hidden;">
         <!-- Welcome Banner -->
         <div class="mb-8 relative overflow-hidden rounded-3xl" data-aos="fade-down">
             <div class="gradient-bg rounded-3xl p-8 text-white shadow-xl relative">
@@ -377,7 +400,7 @@ if($export_type === 'pdf') {
             </form>
         </div>
 
-        <!-- Table -->
+        <!-- Table Lelang -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden border hover-glow" style="border-color:var(--primary-100)" data-aos="zoom-in">
             <div class="p-6 border-b" style="border-color:var(--primary-100);background:linear-gradient(to right,var(--primary-50),white)">
                 <div class="flex items-center justify-between">
@@ -459,6 +482,7 @@ if($export_type === 'pdf') {
             </div>
         </div>
 
+        <!-- Table Pembayaran -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden border hover-glow mt-6" style="border-color:var(--primary-100)" data-aos="zoom-in">
             <div class="p-6 border-b" style="border-color:var(--primary-100);background:linear-gradient(to right,var(--primary-50),white)">
                 <div class="flex items-center justify-between">
@@ -497,7 +521,7 @@ if($export_type === 'pdf') {
                                 <?php if(($row['status_pembayaran'] ?? '') === 'selesai'): ?>
                                     <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Selesai</span>
                                 <?php else: ?>
-                                    <span class="badge badge-info"><i class="fas fa-info-circle mr-1"></i><?php echo htmlspecialchars(ucfirst($row['status_pembayaran'] ?? 'pending')); ?></span>
+                                    <span class="badge badge-info"><i class="fas fa-info-circle mr-1"></i><?php echo htmlspecialchars(ucfirst($row['status_pembayaran'] ?? '')); ?></span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-4"><?php echo htmlspecialchars($row['bukti_pembayaran'] ?: '-'); ?></td>
@@ -516,8 +540,8 @@ if($export_type === 'pdf') {
                 </table>
             </div>
         </div>
-    </main>
-</div>
+        </main>
+    </div>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
@@ -525,7 +549,7 @@ if($export_type === 'pdf') {
     function createParticles(){const c=document.getElementById('particles');for(let i=0;i<20;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.animationDuration=(Math.random()*10+10)+'s';p.style.animationDelay=Math.random()*5+'s';p.style.width=p.style.height=(Math.random()*6+2)+'px';c.appendChild(p);}}
     createParticles();
     document.querySelectorAll('.counter').forEach(el=>{const t=parseInt(el.getAttribute('data-target'));const step=Math.max(t/125,1);let curr=0;const u=()=>{curr+=step;if(curr<t){el.textContent=Math.floor(curr).toLocaleString('id-ID');requestAnimationFrame(u);}else{el.textContent=t.toLocaleString('id-ID');}};u();});
-    function updateClock(){const now=new Date();const t=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const el=document.getElementById('liveClock');const lu=document.getElementById('lastUpdate');if(el)el.textContent=t+' WIB';if(lu)lu.textContent=t;}
+    function updateClock(){const now=new Date();const t=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const el=document.getElementById('liveClock');if(el)el.textContent=t+' WIB';}
     setInterval(updateClock,1000);
 </script>
 </body>

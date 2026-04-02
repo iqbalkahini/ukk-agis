@@ -24,7 +24,7 @@ if(isset($_POST['create_lelang'])) {
 }
 
 $lelang=mysqli_query($conn,"SELECT l.*,b.nama_barang,b.harga_awal,b.gambar,u.nama_lengkap as pemenang FROM tb_lelang l JOIN tb_barang b ON l.id_barang=b.id_barang LEFT JOIN tb_user u ON l.id_user=u.id_user ORDER BY l.id_lelang DESC");
-$barang_available=mysqli_query($conn,"SELECT * FROM tb_barang WHERE status_barang='pending' OR id_barang NOT IN (SELECT id_barang FROM tb_lelang WHERE status='dibuka')");
+$barang_available=mysqli_query($conn,"SELECT * FROM tb_barang WHERE status_barang='tunggu' OR id_barang NOT IN (SELECT id_barang FROM tb_lelang WHERE status='dibuka')");
 $total_lelang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang"))['t'];
 $lelang_aktif=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
 $lelang_tutup=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='ditutup'"))['t'];
