@@ -203,6 +203,10 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Beranda</span>
                         <i class="fas fa-chevron-right ml-auto text-sm text-primary-600"></i>
                     </a>
+                    <a href="pengguna.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
+                        <i class="fas fa-users w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
+                        <span class="ml-3 group-hover:translate-x-1 transition-transform">Pengguna</span>
+                    </a>
                     <a href="laporan.php" class="flex items-center px-4 py-3 text-primary-700 hover:bg-primary-50 rounded-xl transition-all duration-200 group relative overflow-hidden">
                         <i class="fas fa-chart-bar w-6 text-primary-400 group-hover:text-primary-600 group-hover:scale-110 transition-transform"></i>
                         <span class="ml-3 group-hover:translate-x-1 transition-transform">Laporan</span>
