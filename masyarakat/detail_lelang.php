@@ -6,21 +6,27 @@ checkLevel([3]);
 $id_lelang = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $id_user   = $_SESSION['id_user'];
 
+$lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT l.*, b.* FROM tb_lelang l JOIN tb_barang b ON l.id_barang = b.id_barang WHERE l.id_lelang = $id_lelang"));
+
 // Handle penawaran
 if(isset($_POST['submit_penawaran'])) {
-    $penawaran_harga = (int)$_POST['penawaran_harga'];
-    $id_barang       = (int)$_POST['id_barang'];
-    $current = mysqli_fetch_assoc(mysqli_query($conn, "SELECT harga_akhir FROM tb_lelang WHERE id_lelang = $id_lelang"));
-    if($penawaran_harga > $current['harga_akhir']) {
-        mysqli_query($conn, "INSERT INTO history_lelang (id_lelang, id_barang, id_user, penawaran_harga) VALUES ($id_lelang, $id_barang, $id_user, $penawaran_harga)");
-        mysqli_query($conn, "UPDATE tb_lelang SET harga_akhir = $penawaran_harga, id_user = $id_user WHERE id_lelang = $id_lelang");
-        $success = "Penawaran berhasil diajukan!";
+    if (!$lelang || $lelang['status'] !== 'dibuka') {
+        $error = "Lelang ini belum dibuka atau sudah ditutup!";
     } else {
-        $error = "Penawaran harus lebih tinggi dari harga saat ini!";
+        $penawaran_harga = (int)$_POST['penawaran_harga'];
+        $id_barang       = (int)$_POST['id_barang'];
+        if($penawaran_harga > $lelang['harga_akhir']) {
+            mysqli_query($conn, "INSERT INTO history_lelang (id_lelang, id_barang, id_user, penawaran_harga) VALUES ($id_lelang, $id_barang, $id_user, $penawaran_harga)");
+            mysqli_query($conn, "UPDATE tb_lelang SET harga_akhir = $penawaran_harga, id_user = $id_user WHERE id_lelang = $id_lelang");
+            $success = "Penawaran berhasil diajukan!";
+            // Refresh data setelah penawaran
+            $lelang['harga_akhir'] = $penawaran_harga;
+        } else {
+            $error = "Penawaran harus lebih tinggi dari harga saat ini!";
+        }
     }
 }
 
-$lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT l.*, b.* FROM tb_lelang l JOIN tb_barang b ON l.id_barang = b.id_barang WHERE l.id_lelang = $id_lelang"));
 $history = mysqli_query($conn, "SELECT h.*, u.nama_lengkap FROM history_lelang h JOIN tb_user u ON h.id_user = u.id_user WHERE h.id_lelang = $id_lelang ORDER BY h.penawaran_harga DESC");
 $user_bid = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM history_lelang WHERE id_lelang = $id_lelang AND id_user = $id_user ORDER BY penawaran_harga DESC LIMIT 1"));
 
@@ -210,6 +216,10 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
             <span class="px-4 py-2 bg-green-500 text-white rounded-full font-semibold flex items-center shadow-lg text-sm">
               <span class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>Sedang Berlangsung
             </span>
+            <?php elseif($lelang['status'] == 'pending'): ?>
+            <span class="px-4 py-2 rounded-full font-semibold flex items-center shadow-lg text-sm" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74">
+              <i class="fas fa-clock mr-2 animate-spin"></i>Menunggu Dibuka
+            </span>
             <?php else: ?>
             <span class="px-4 py-2 bg-red-500 text-white rounded-full font-semibold flex items-center shadow-lg text-sm">
               <i class="fas fa-times-circle mr-2"></i>Ditutup
@@ -334,14 +344,22 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
           </button>
         </form>
 
-        <?php if($lelang['status']=='dibuka'): ?>
         <div class="mt-5 p-4 rounded-xl bg-blue-50">
           <div class="flex items-center justify-between">
             <span class="text-blue-700 font-semibold text-sm">Sisa Waktu</span>
             <span class="text-blue-800 font-bold text-sm" id="countdown">-</span>
           </div>
         </div>
-        <?php endif; ?>
+
+        <?php elseif($lelang['status'] == 'pending'): ?>
+        <div class="text-center py-8">
+          <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style="background:#fff7ed">
+            <i class="fas fa-clock text-3xl animate-spin" style="color:#c2410c"></i>
+          </div>
+          <p class="font-semibold text-lg" style="color:var(--primary-800)">Lelang Belum Dibuka</p>
+          <p class="text-sm text-gray-500 mt-2">Penawaran akan tersedia mulai tanggal:</p>
+          <p class="text-base font-bold mt-1 text-orange-600"><?php echo formatTanggal($lelang['tgl_lelang']); ?></p>
+        </div>
 
         <?php else: ?>
         <div class="text-center py-8">

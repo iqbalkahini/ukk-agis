@@ -28,8 +28,14 @@ if(isset($_GET['action']) && isset($_GET['id'])) {
 if(isset($_POST['create_lelang'])) {
     $id_barang=$_POST['id_barang']; $tgl=$_POST['tgl_lelang']; $id_petugas=$_SESSION['id_user'];
     $barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT harga_awal FROM tb_barang WHERE id_barang=$id_barang"));
-    mysqli_query($conn,"INSERT INTO tb_lelang (id_barang,tgl_lelang,harga_akhir,id_petugas,status) VALUES ($id_barang,'$tgl',{$barang['harga_awal']},$id_petugas,'dibuka')");
-    mysqli_query($conn,"UPDATE tb_barang SET status_barang='dibuka' WHERE id_barang=$id_barang");
+    
+    // Logika lelang terjadwal
+    $status_baru = ($tgl == date('Y-m-d')) ? 'dibuka' : 'pending';
+    
+    mysqli_query($conn,"INSERT INTO tb_lelang (id_barang,tgl_lelang,harga_akhir,id_petugas,status) VALUES ($id_barang,'$tgl',{$barang['harga_awal']},$id_petugas,'$status_baru')");
+    mysqli_query($conn,"UPDATE tb_barang SET status_barang='$status_baru' WHERE id_barang=$id_barang");
+    
+    $_SESSION['success'] = ($status_baru == 'dibuka') ? 'Lelang berhasil dibuka hari ini' : 'Lelang berhasil dijadwalkan (Menunggu)';
     header('Location: kelola_lelang.php'); exit;
 }
 
@@ -334,6 +340,8 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
                             <td class="px-4 py-4">
                                 <?php if($row['status']=='dibuka'): ?>
                                     <span class="badge badge-success"><span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>Dibuka</span>
+                                <?php elseif($row['status']=='pending'): ?>
+                                    <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74"><i class="fas fa-clock mr-1"></i>Menunggu</span>
                                 <?php else: ?>
                                     <span class="badge badge-danger"><i class="fas fa-lock mr-1"></i>Ditutup</span>
                                 <?php endif; ?>

@@ -9,9 +9,9 @@ $lelang_data = mysqli_query($conn, "SELECT l.*, b.nama_barang, b.harga_awal, b.g
     (SELECT MAX(penawaran_harga) FROM history_lelang WHERE id_lelang = l.id_lelang) as harga_tertinggi,
     (SELECT COUNT(*) FROM history_lelang WHERE id_lelang = l.id_lelang) as jumlah_penawaran
     FROM tb_lelang l JOIN tb_barang b ON l.id_barang = b.id_barang
-    WHERE l.status = 'dibuka' ORDER BY l.created_at DESC");
+    WHERE l.status IN ('dibuka', 'pending') ORDER BY FIELD(l.status, 'dibuka', 'pending'), l.created_at DESC");
 
-$total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
+$total_lelang_all = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status IN ('dibuka', 'pending')"))['t'];
 $total_penawaran  = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM history_lelang WHERE id_user=$id_user"))['t'];
 $total_menang     = mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE id_user=$id_user AND status='ditutup'"))['t'];
 ?>
@@ -249,10 +249,16 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
             <i class="fas fa-box text-white text-3xl"></i>
           </div>
         <?php endif; ?>
-        <div class="absolute top-4 right-4">
-          <span class="badge-success animate-pulse-soft"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>Aktif</span>
+        <div class="absolute top-4 right-4 text-[10px]">
+          <?php if($row['status'] == 'dibuka'): ?>
+            <span class="badge-success animate-pulse-soft"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>Aktif</span>
+          <?php else: ?>
+            <span class="px-3 py-1 rounded-full font-bold flex items-center shadow-lg" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74">
+              <i class="fas fa-clock mr-1.5 animate-spin"></i>Menunggu
+            </span>
+          <?php endif; ?>
         </div>
-        <div class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg" style="background:rgba(30,58,102,0.7); backdrop-filter:blur(4px)">
+        <div class="absolute top-4 left-4 px-2 py-1 rounded-full text-[10px] font-bold text-white shadow-lg" style="background:rgba(30,58,102,0.7); backdrop-filter:blur(4px)">
           <i class="fas fa-users mr-1"></i><?php echo $row['jumlah_penawaran']; ?> penawar
         </div>
       </div>
@@ -273,9 +279,15 @@ body{background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);min-height:100vh
           <span><i class="fas fa-clock mr-1" style="color:var(--primary-400)"></i><?php echo formatTanggal($row['tgl_lelang']); ?></span>
           <span><i class="fas fa-hashtag mr-1" style="color:var(--primary-400)"></i>ID: <?php echo $row['id_lelang']; ?></span>
         </div>
-        <a href="detail_lelang.php?id=<?php echo $row['id_lelang']; ?>" class="btn-primary text-sm py-2.5 px-4 w-full text-center justify-center">
-          <i class="fas fa-gavel"></i>Tawar Sekarang
-        </a>
+        <?php if($row['status'] == 'dibuka'): ?>
+          <a href="detail_lelang.php?id=<?php echo $row['id_lelang']; ?>" class="btn-primary text-sm py-2.5 px-4 w-full text-center justify-center">
+            <i class="fas fa-gavel"></i>Tawar Sekarang
+          </a>
+        <?php else: ?>
+          <a href="detail_lelang.php?id=<?php echo $row['id_lelang']; ?>" class="w-full py-2.5 px-4 rounded-xl text-center justify-center flex items-center gap-2 font-semibold transition-all hover:bg-orange-100" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74">
+            <i class="fas fa-eye"></i>Lihat Detail
+          </a>
+        <?php endif; ?>
       </div>
     </div>
     <?php endwhile; ?>
