@@ -50,14 +50,16 @@ function formatTanggal($tanggal)
 // Function untuk mencari path gambar barang yang valid
 function resolveBarangImageUrl($filename)
 {
-    if (!$filename) return null;
+    if (!$filename)
+        return null;
     $paths = [
         ['file' => __DIR__ . '/../barang/' . $filename, 'url' => '../barang/' . $filename],
         ['file' => __DIR__ . '/../uploads/barang/' . $filename, 'url' => '../uploads/barang/' . $filename],
         ['file' => __DIR__ . '/../uploads/' . $filename, 'url' => '../uploads/' . $filename],
     ];
     foreach ($paths as $path) {
-        if (file_exists($path['file'])) return $path['url'];
+        if (file_exists($path['file']))
+            return $path['url'];
     }
     return null;
 }

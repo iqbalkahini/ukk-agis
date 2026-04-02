@@ -33,6 +33,11 @@ if(isset($_GET['delete'])) {
 
 // Handle tambah barang
 if(isset($_POST['tambah_barang'])) {
+    if(empty($_POST['harga_awal']) || $_POST['harga_awal'] <= 0) {
+        echo "<script>alert('Harga barang tidak boleh kosong!'); window.location='dashboard.php';</script>";
+        exit;
+    }
+    
     $nama = mysqli_real_escape_string($conn, $_POST['nama_barang']);
     $tgl = date('Y-m-d');
     $harga = (int)$_POST['harga_awal'];
@@ -52,6 +57,11 @@ if(isset($_POST['tambah_barang'])) {
 
 // Handle perbarui barang
 if(isset($_POST['perbarui_barang'])) {
+    if(empty($_POST['harga_awal']) || $_POST['harga_awal'] <= 0) {
+        echo "<script>alert('Harga barang tidak boleh kosong!'); window.location='dashboard.php';</script>";
+        exit;
+    }
+    
     $id = (int)$_POST['id_barang'];
     $nama = mysqli_real_escape_string($conn, $_POST['nama_barang']);
     $harga = (int)$_POST['harga_awal'];
@@ -332,15 +342,18 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
     <div id="modalTambah" class="modal-backdrop">
         <div class="modal-box">
             <h3 class="text-xl font-bold mb-4">Tambah Barang Baru</h3>
-            <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return validateForm('modalTambah')" novalidate>
                 <input type="hidden" name="tambah_barang" value="1">
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Nama Barang</label>
-                    <input type="text" name="nama_barang" class="form-input" required>
+                    <input type="text" name="nama_barang" id="namaTambah" class="form-input" required>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Harga Awal</label>
-                    <input type="number" name="harga_awal" class="form-input" required>
+                    <input type="number" name="harga_awal" id="hargaTambah" class="form-input" min="1" required>
+                    <p id="errorHargaTambah" class="text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-wider italic">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Harga harus diisi dan lebih dari 0!
+                    </p>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Deskripsi</label>
@@ -361,7 +374,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
     <div id="modalEdit" class="modal-backdrop">
         <div class="modal-box">
             <h3 class="text-xl font-bold mb-4">Edit Barang</h3>
-            <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return validateForm('modalEdit')" novalidate>
                 <input type="hidden" name="perbarui_barang" value="1">
                 <input type="hidden" name="id_barang" id="editId">
                 <div>
@@ -370,7 +383,10 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Harga Awal</label>
-                    <input type="number" name="harga_awal" id="editHarga" class="form-input" required>
+                    <input type="number" name="harga_awal" id="editHarga" class="form-input" min="1" required>
+                    <p id="errorHargaEdit" class="text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-wider italic">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Harga harus diisi dan lebih dari 0!
+                    </p>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Status</label>
@@ -397,8 +413,23 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
     </div>
 
     <script>
-        function openModal(id){ document.getElementById(id).classList.add('active'); }
-        function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+        function openModal(id){ 
+            document.getElementById(id).classList.add('active'); 
+        }
+        function closeModal(id){ 
+            document.getElementById(id).classList.remove('active');
+            // Reset error states
+            const errorIds = ['errorHargaTambah', 'errorHargaEdit'];
+            errorIds.forEach(eid => {
+                const el = document.getElementById(eid);
+                if(el) el.classList.add('hidden');
+            });
+            const inputIds = ['hargaTambah', 'editHarga'];
+            inputIds.forEach(iid => {
+                const el = document.getElementById(iid);
+                if(el) el.classList.remove('border-red-500', 'bg-red-50');
+            });
+        }
         function openEditModal(data){
             document.getElementById('editId').value = data.id_barang;
             document.getElementById('editNama').value = data.nama_barang;
@@ -407,6 +438,40 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
             document.getElementById('editDeskripsi').value = data.deskripsi_barang;
             openModal('modalEdit');
         }
+
+        function validateForm(modalId) {
+            let isValid = true;
+            const isEdit = modalId === 'modalEdit';
+            const priceInput = document.getElementById(isEdit ? 'editHarga' : 'hargaTambah');
+            const errorMsg = document.getElementById(isEdit ? 'errorHargaEdit' : 'errorHargaTambah');
+            
+            if (!priceInput.value || parseInt(priceInput.value) <= 0) {
+                errorMsg.classList.remove('hidden');
+                priceInput.classList.add('border-red-500', 'bg-red-50');
+                priceInput.focus();
+                isValid = false;
+            } else {
+                errorMsg.classList.add('hidden');
+                priceInput.classList.remove('border-red-500', 'bg-red-50');
+            }
+            
+            return isValid;
+        }
+
+        // Add real-time validation
+        ['hargaTambah', 'editHarga'].forEach(id => {
+            const input = document.getElementById(id);
+            if(input) {
+                input.addEventListener('input', function() {
+                    const errorId = id === 'hargaTambah' ? 'errorHargaTambah' : 'errorHargaEdit';
+                    const errorMsg = document.getElementById(errorId);
+                    if (this.value && parseInt(this.value) > 0) {
+                        errorMsg.classList.add('hidden');
+                        this.classList.remove('border-red-500', 'bg-red-50');
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
