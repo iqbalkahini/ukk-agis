@@ -42,7 +42,7 @@ if(isset($_POST['tambah_barang'])) {
     $tgl = date('Y-m-d');
     $harga = (int)$_POST['harga_awal'];
     $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi_barang']);
-    $status = 'tunggu';
+    $status = 'pending';
     
     $gambar = '';
     if($_FILES['gambar']['name']) {
@@ -92,7 +92,7 @@ $barang_list = mysqli_query($conn, "SELECT * FROM tb_barang $where ORDER BY id_b
 
 // Statistics
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang"))['total'];
-$tunggu_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'tunggu'"))['total'];
+$tunggu_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'pending'"))['total'];
 $dibuka_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'dibuka'"))['total'];
 $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang = 'ditutup'"))['total'];
 ?>
@@ -270,7 +270,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                     <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Cari barang..." class="form-input flex-1">
                     <select name="status" class="form-input w-40">
                         <option value="">Semua Status</option>
-                        <option value="tunggu" <?php echo $filter_status=='tunggu'?'selected':''; ?>>Tunggu</option>
+                        <option value="pending" <?php echo $filter_status=='pending'?'selected':''; ?>>Tunggu</option>
                         <option value="dibuka" <?php echo $filter_status=='dibuka'?'selected':''; ?>>Dibuka</option>
                         <option value="ditutup" <?php echo $filter_status=='ditutup'?'selected':''; ?>>Ditutup</option>
                     </select>
@@ -395,7 +395,7 @@ $ditutup_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as tota
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Status</label>
                     <select name="status_barang" id="editStatus" class="form-input">
-                        <option value="tunggu">Tunggu</option>
+                        <option value="pending">Tunggu</option>
                         <option value="dibuka">Dibuka</option>
                         <option value="ditutup">Ditutup</option>
                     </select>
