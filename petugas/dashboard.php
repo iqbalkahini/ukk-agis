@@ -8,7 +8,7 @@ $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
 $total_lelang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status = 'dibuka'"))['total'];
 $total_transaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'selesai'"))['total'];
-$tunggu_bayar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'tunggu'"))['total'];
+$tunggu_bayar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE status_pembayaran = 'pending'"))['total'];
 $total_nilai = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(jumlah) as total FROM tb_pembayaran WHERE status_pembayaran = 'selesai'"))['total'];
 
 // Get recent lelang

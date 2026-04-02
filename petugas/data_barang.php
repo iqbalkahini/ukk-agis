@@ -76,7 +76,7 @@ $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $barang = mysqli_query($conn, "SELECT * FROM tb_barang $where_clause ORDER BY id_barang DESC");
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang"))['total'];
 $lelang_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_lelang WHERE status='dibuka'"))['total'];
-$tunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang='tunggu'"))['total'];
+$tunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_barang WHERE status_barang='pending'"))['total'];
 $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
 ?>
 <!DOCTYPE html>
@@ -252,7 +252,7 @@ $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
                     <label class="block text-sm font-semibold mb-2" style="color:var(--primary-700)">Status</label>
                     <select name="status" class="form-input">
                         <option value="">Semua Status</option>
-                        <option value="tunggu" <?php echo $status === 'tunggu' ? 'selected' : ''; ?>>Tunggu</option>
+                        <option value="pending" <?php echo $status === 'pending' ? 'selected' : ''; ?>>Tunggu</option>
                         <option value="dibuka" <?php echo $status === 'dibuka' ? 'selected' : ''; ?>>Dibuka</option>
                         <option value="ditutup" <?php echo $status === 'ditutup' ? 'selected' : ''; ?>>Ditutup</option>
                     </select>
