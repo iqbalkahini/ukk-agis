@@ -316,9 +316,11 @@ $filtered_total = $barang ? mysqli_num_rows($barang) : 0;
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex gap-2">
+                                        <?php if (($row['status_barang'] ?? '') !== 'dibuka'): ?>
                                         <a href="tambah_barang.php?edit=<?php echo $row['id_barang']; ?>" class="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-110" style="background:var(--primary-100);color:var(--primary-700)" title="Edit">
                                             <i class="fas fa-edit text-sm"></i>
                                         </a>
+                                        <?php endif; ?>
                                         <a href="?delete=<?php echo $row['id_barang']; ?>" onclick="return confirm('Yakin ingin menghapus barang ini?')" class="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-110" style="background:#fee2e2;color:#dc2626" title="Hapus">
                                             <i class="fas fa-trash text-sm"></i>
                                         </a>
