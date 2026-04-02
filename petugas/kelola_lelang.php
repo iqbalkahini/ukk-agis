@@ -4,13 +4,23 @@ require_once('../config/config.php');
 checkLevel([2]);
 
 if(isset($_GET['action']) && isset($_GET['id'])) {
-    $id=$_GET['id']; $action=$_GET['action'];
+    $id=(int)$_GET['id']; $action=$_GET['action'];
     if($action=='buka'){
-        mysqli_query($conn,"UPDATE tb_lelang SET status='dibuka' WHERE id_lelang=$id");
-        mysqli_query($conn,"UPDATE tb_barang SET status_barang='dibuka' WHERE id_barang=(SELECT id_barang FROM tb_lelang WHERE id_lelang=$id)");
+        // Cek apakah sudah ada pembayaran lunas/selesai untuk lelang ini
+        $cek_bayar = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_pembayaran WHERE id_lelang = $id AND (status_pembayaran = 'dibayar' OR status_pembayaran = 'selesai')");
+        $lunas = mysqli_fetch_assoc($cek_bayar)['total'];
+        
+        if($lunas > 0) {
+            $_SESSION['error'] = 'Lelang tidak bisa dibuka kembali karena pemenang sudah membayar!';
+        } else {
+            mysqli_query($conn,"UPDATE tb_lelang SET status='dibuka' WHERE id_lelang=$id");
+            mysqli_query($conn,"UPDATE tb_barang SET status_barang='dibuka' WHERE id_barang=(SELECT id_barang FROM tb_lelang WHERE id_lelang=$id)");
+            $_SESSION['success'] = 'Lelang berhasil dibuka kembali';
+        }
     } elseif($action=='tutup'){
         mysqli_query($conn,"UPDATE tb_lelang SET status='ditutup' WHERE id_lelang=$id");
         mysqli_query($conn,"UPDATE tb_barang SET status_barang='ditutup' WHERE id_barang=(SELECT id_barang FROM tb_lelang WHERE id_lelang=$id)");
+        $_SESSION['success'] = 'Lelang berhasil ditutup';
     }
     header('Location: kelola_lelang.php'); exit;
 }
@@ -23,8 +33,8 @@ if(isset($_POST['create_lelang'])) {
     header('Location: kelola_lelang.php'); exit;
 }
 
-$lelang=mysqli_query($conn,"SELECT l.*,b.nama_barang,b.harga_awal,b.gambar,u.nama_lengkap as pemenang FROM tb_lelang l JOIN tb_barang b ON l.id_barang=b.id_barang LEFT JOIN tb_user u ON l.id_user=u.id_user ORDER BY l.id_lelang DESC");
-$barang_available=mysqli_query($conn,"SELECT * FROM tb_barang WHERE status_barang='tunggu' OR id_barang NOT IN (SELECT id_barang FROM tb_lelang WHERE status='dibuka')");
+$lelang=mysqli_query($conn,"SELECT l.*,b.nama_barang,b.harga_awal,b.gambar,u.nama_lengkap as pemenang, (SELECT COUNT(*) FROM tb_pembayaran p WHERE p.id_lelang = l.id_lelang AND (p.status_pembayaran = 'dibayar' OR p.status_pembayaran = 'selesai')) as sudah_bayar FROM tb_lelang l JOIN tb_barang b ON l.id_barang=b.id_barang LEFT JOIN tb_user u ON l.id_user=u.id_user ORDER BY l.id_lelang DESC");
+$barang_available=mysqli_query($conn,"SELECT * FROM tb_barang WHERE status_barang='pending' OR (status_barang='ditutup' AND id_barang NOT IN (SELECT l.id_barang FROM tb_lelang l JOIN tb_pembayaran p ON l.id_lelang = p.id_lelang WHERE p.status_pembayaran IN ('dibayar', 'selesai'))) ");
 $total_lelang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang"))['t'];
 $lelang_aktif=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='dibuka'"))['t'];
 $lelang_tutup=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM tb_lelang WHERE status='ditutup'"))['t'];
@@ -334,9 +344,15 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
                                         <i class="fas fa-stop-circle mr-1"></i>Tutup
                                     </a>
                                 <?php else: ?>
-                                    <a href="?action=buka&id=<?php echo $row['id_lelang']; ?>" class="flex items-center text-sm font-semibold transition-all hover:scale-105 px-3 py-1.5 rounded-xl" style="background:#dcfce7;color:#15803d">
-                                        <i class="fas fa-play-circle mr-1"></i>Buka
-                                    </a>
+                                    <?php if($row['sudah_bayar'] > 0): ?>
+                                        <button disabled class="flex items-center text-sm font-semibold px-3 py-1.5 rounded-xl opacity-60 cursor-not-allowed" style="background:#f1f5f9;color:#64748b" title="Pemenang sudah membayar">
+                                            <i class="fas fa-check-double mr-1"></i>Lunas
+                                        </button>
+                                    <?php else: ?>
+                                        <a href="?action=buka&id=<?php echo $row['id_lelang']; ?>" class="flex items-center text-sm font-semibold transition-all hover:scale-105 px-3 py-1.5 rounded-xl" style="background:#dcfce7;color:#15803d">
+                                            <i class="fas fa-play-circle mr-1"></i>Buka
+                                        </a>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-4">
@@ -368,6 +384,30 @@ $total_barang=mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM t
     function updateClock(){const now=new Date();const t=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const el=document.getElementById('liveClock');const lu=document.getElementById('lastUpdate');if(el)el.textContent=t+' WIB';if(lu)lu.textContent=t;}
     setInterval(updateClock,1000);
     document.getElementById('searchLelang')?.addEventListener('input',function(){const s=this.value.toLowerCase();document.querySelectorAll('#lelangTableBody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(s)?'':'none';});});
+
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const colors = type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200';
+        const icon = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+        toast.className = `flex items-center p-4 rounded-xl shadow-lg text-sm border ${colors} animate__animated animate__fadeInRight mb-2`;
+        toast.style.minWidth = "300px";
+        toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
 </script>
+
+<?php if (isset($_SESSION['success'])): ?>
+<script>document.addEventListener('DOMContentLoaded', () => showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success'));</script>
+<?php unset($_SESSION['success']); endif; ?>
+
+<?php if (isset($_SESSION['error'])): ?>
+<script>document.addEventListener('DOMContentLoaded', () => showToast('<?php echo addslashes($_SESSION['error']); ?>', 'error'));</script>
+<?php unset($_SESSION['error']); endif; ?>
 </body>
 </html>
