@@ -30,8 +30,8 @@ if (!function_exists('resolveBarangImageUrl')) {
 
 if (isset($_POST['submit'])) {
     $nama = mysqli_real_escape_string($conn, $_POST['nama_barang']);
-    $tgl = mysqli_real_escape_string($conn, $_POST['tgl']);
     $harga = (int)str_replace('.', '', $_POST['harga_awal']);
+    $tgl = date('Y-m-d');
     
     if ($harga <= 0) {
         $_SESSION['error'] = 'Harga awal harus lebih dari 0';
@@ -80,7 +80,7 @@ if (isset($_POST['submit'])) {
 
     if (!empty($_POST['id_barang'])) {
         $id = (int) $_POST['id_barang'];
-        mysqli_query($conn, "UPDATE tb_barang SET nama_barang='$nama', tgl='$tgl', harga_awal='$harga', deskripsi_barang='$desk' $gambar_query WHERE id_barang=$id");
+        mysqli_query($conn, "UPDATE tb_barang SET nama_barang='$nama', harga_awal='$harga', deskripsi_barang='$desk' $gambar_query WHERE id_barang=$id");
         $_SESSION['success'] = 'Barang berhasil diperbarui';
     } else {
         if ($gambar_value) {
@@ -232,11 +232,6 @@ if (isset($_GET['edit'])) {
                     <div>
                         <label class="block text-sm font-semibold mb-2" style="color:var(--primary-700)">Nama Barang</label>
                         <input type="text" name="nama_barang" required value="<?php echo htmlspecialchars($edit_data['nama_barang'] ?? ''); ?>" class="form-input" placeholder="Masukkan nama barang">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-2" style="color:var(--primary-700)">Tanggal</label>
-                        <input type="date" name="tgl" required value="<?php echo htmlspecialchars($edit_data['tgl'] ?? date('Y-m-d')); ?>" class="form-input">
                     </div>
 
                     <div>
