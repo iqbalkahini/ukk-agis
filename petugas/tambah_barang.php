@@ -31,7 +31,14 @@ if (!function_exists('resolveBarangImageUrl')) {
 if (isset($_POST['submit'])) {
     $nama = mysqli_real_escape_string($conn, $_POST['nama_barang']);
     $tgl = mysqli_real_escape_string($conn, $_POST['tgl']);
-    $harga = str_replace('.', '', $_POST['harga_awal']);
+    $harga = (int)str_replace('.', '', $_POST['harga_awal']);
+    
+    if ($harga <= 0) {
+        $_SESSION['error'] = 'Harga awal harus lebih dari 0';
+        header('Location: tambah_barang.php' . (!empty($_POST['id_barang']) ? '?edit=' . (int) $_POST['id_barang'] : ''));
+        exit;
+    }
+    
     $desk = mysqli_real_escape_string($conn, $_POST['deskripsi_barang']);
     $gambar_query = '';
     $gambar_value = '';
@@ -219,7 +226,7 @@ if (isset($_GET['edit'])) {
                     <?php echo $edit_data ? 'Form Edit Barang' : 'Form Tambah Barang'; ?>
                 </h2>
 
-                <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-5" id="formBarang" onsubmit="return validateForm()" novalidate>
                     <input type="hidden" name="id_barang" value="<?php echo $edit_data['id_barang'] ?? ''; ?>">
 
                     <div>
@@ -234,7 +241,10 @@ if (isset($_GET['edit'])) {
 
                     <div>
                         <label class="block text-sm font-semibold mb-2" style="color:var(--primary-700)">Harga Awal</label>
-                        <input type="text" name="harga_awal" required value="<?php echo isset($edit_data['harga_awal']) ? number_format($edit_data['harga_awal'], 0, ',', '.') : ''; ?>" class="form-input" placeholder="0" oninput="formatRupiah(this)">
+                        <input type="text" name="harga_awal" id="harga_awal" required value="<?php echo isset($edit_data['harga_awal']) ? number_format($edit_data['harga_awal'], 0, ',', '.') : ''; ?>" class="form-input" placeholder="0" oninput="formatRupiah(this)">
+                        <p id="errorHarga" class="text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-wider italic">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Harga harus diisi dan lebih dari 0!
+                        </p>
                     </div>
 
                     <div>
@@ -270,8 +280,54 @@ if (isset($_GET['edit'])) {
     <script>
         function formatRupiah(input) {
             let value = input.value.replace(/[^0-9]/g, '');
-            if (value) input.value = parseInt(value, 10).toLocaleString('id-ID');
+            if (value) {
+                input.value = parseInt(value, 10).toLocaleString('id-ID');
+                // Hide error if valid
+                if (parseInt(value) > 0) {
+                    document.getElementById('errorHarga').classList.add('hidden');
+                    input.classList.remove('border-red-500', 'bg-red-50');
+                }
+            }
+        }
+
+        function validateForm() {
+            const priceInput = document.getElementById('harga_awal');
+            const errorMsg = document.getElementById('errorHarga');
+            const rawValue = priceInput.value.replace(/[^0-9]/g, '');
+            
+            if (!rawValue || parseInt(rawValue) <= 0) {
+                errorMsg.classList.remove('hidden');
+                priceInput.classList.add('border-red-500', 'bg-red-50');
+                priceInput.focus();
+                return false;
+            }
+            
+            return true;
+        }
+
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colors = type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200';
+            const icon = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+            toast.className = `flex items-center p-4 rounded-xl shadow-lg text-sm border ${colors} animate__animated animate__fadeInRight mb-2`;
+            toast.style.minWidth = "300px";
+            toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
         }
     </script>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showToast('<?php echo addslashes($_SESSION['error']); ?>', 'error');
+        });
+    </script>
+    <?php unset($_SESSION['error']); endif; ?>
 </body>
 </html>
