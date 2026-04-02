@@ -72,7 +72,7 @@ $total_nilai = 0;
 if($stats_query) {
     while($temp = mysqli_fetch_assoc($stats_query)) {
         $total_pembayaran++;
-        if($temp['status_pembayaran'] == 'tunggu') $pembayaran_tunggu++;
+        if($temp['status_pembayaran'] == 'pending' || $temp['status_pembayaran'] == 'tunggu') $pembayaran_tunggu++;
         elseif($temp['status_pembayaran'] == 'dibayar') $pembayaran_dibayar++;
         elseif($temp['status_pembayaran'] == 'selesai') {
             $pembayaran_selesai++;
@@ -499,6 +499,28 @@ if(!function_exists('formatTanggal')) {
             overflow: hidden;
             border-radius: inherit;
         }
+
+        /* Modal Image Viewer Styles */
+        #imageModal {
+            transition: all 0.3s ease;
+        }
+        #imageModal.hidden {
+            display: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #imageModal.flex {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-image-container {
+            max-width: 90vw;
+            max-height: 80vh;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -707,7 +729,7 @@ if(!function_exists('formatTanggal')) {
                     <div class="w-full md:w-52">
                         <select name="status" class="filter-select">
                             <option value="all" <?php echo $status_filter == 'all' || $status_filter == '' ? 'selected' : ''; ?>>Semua Status</option>
-                            <option value="tunggu" <?php echo $status_filter == 'tunggu' ? 'selected' : ''; ?>>Tunggu</option>
+                            <option value="pending" <?php echo $status_filter == 'pending' || $status_filter == 'tunggu' ? 'selected' : ''; ?>>Tunggu</option>
                             <option value="dibayar" <?php echo $status_filter == 'dibayar' ? 'selected' : ''; ?>>Menunggu Konfirmasi</option>
                             <option value="selesai" <?php echo $status_filter == 'selesai' ? 'selected' : ''; ?>>Selesai</option>
                         </select>
@@ -745,8 +767,9 @@ if(!function_exists('formatTanggal')) {
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Pembeli</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Jumlah</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Metode</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Bukti</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Tanggal</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Keterangan</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-primary-600 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -787,12 +810,24 @@ if(!function_exists('formatTanggal')) {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
+                                    <?php if(!empty($row['bukti_pembayaran'])): ?>
+                                        <div class="relative group cursor-pointer" onclick="viewImage('../uploads/<?php echo $row['bukti_pembayaran']; ?>', 'Bukti Pembayaran: <?php echo htmlspecialchars($row['nama_barang']); ?>')">
+                                            <img src="../uploads/<?php echo $row['bukti_pembayaran']; ?>" alt="Bukti" class="w-12 h-12 object-cover rounded-lg border-2 border-primary-100 group-hover:border-primary-400 transition-all">
+                                            <div class="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                                <i class="fas fa-search-plus text-white text-xs"></i>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-400 font-medium italic">Belum Ada</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4">
                                     <span class="text-sm" style="color: var(--secondary-500)"><?php echo formatTanggal($row['created_at']); ?></span>
                                     <br>
                                     <span class="text-xs" style="color: var(--secondary-400)"><?php echo date('H:i', strtotime($row['created_at'])); ?> WIB</span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php if($row['status_pembayaran'] == 'tunggu'): ?>
+                                    <?php if($row['status_pembayaran'] == 'pending' || $row['status_pembayaran'] == 'tunggu'): ?>
                                         <span class="badge badge-warning">
                                             <i class="fas fa-clock mr-1 text-[10px] animate-pulse"></i>Tunggu
                                         </span>
@@ -890,6 +925,26 @@ if(!function_exists('formatTanggal')) {
         </div>
     </div>
 
+    <!-- Modal View Image -->
+    <div id="imageModal" class="fixed inset-0 hidden items-center justify-center z-[100] modal-overlay p-4">
+        <div class="relative max-w-4xl w-full flex flex-col items-center">
+            <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-red-400 transition-colors flex items-center gap-2 font-bold tracking-wider">
+                <i class="fas fa-times text-2xl"></i> TUTUP
+            </button>
+            <div class="bg-white p-2 rounded-2xl shadow-2xl modal-image-container animate__animated animate__zoomIn">
+                <img id="modal_display_image" src="" alt="Bukti Pembayaran" class="max-w-full max-h-[75vh] object-contain rounded-xl">
+                <div class="p-4 border-t mt-2">
+                    <p id="modal_image_title" class="text-center font-bold text-primary-800 text-lg tracking-tight"></p>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-4">
+                <a id="download_image_btn" href="" download class="btn-primary" style="background: var(--primary-500)">
+                    <i class="fas fa-download mr-2"></i>Download Gambar
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({ duration: 700, once: false, mirror: true, offset: 40, easing: 'ease-out-cubic' });
@@ -968,6 +1023,33 @@ if(!function_exists('formatTanggal')) {
         // Close modal on overlay click
         document.getElementById('updateModal')?.addEventListener('click', function(e) {
             if(e.target === this) closeModal();
+        });
+
+        // Image Viewer Functions
+        function viewImage(src, title) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modal_display_image');
+            const modalTitle = document.getElementById('modal_image_title');
+            const downloadBtn = document.getElementById('download_image_btn');
+
+            modalImg.src = src;
+            modalTitle.textContent = title;
+            downloadBtn.href = src;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.getElementById('imageModal')?.addEventListener('click', function(e) {
+            if(e.target === this) closeImageModal();
         });
 
         // Session messages
